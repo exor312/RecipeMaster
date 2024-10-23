@@ -3,6 +3,27 @@ import pandas as pd
 import os
 import glob
 from typing import Dict, List, Optional
+import hashlib
+
+def generate_unique_id(recipe: Dict, seen_ids: set) -> int:
+    """
+    Generate a unique ID for a recipe based on its content
+    """
+    # Start with a hash of the recipe name and ingredients to create a base number
+    content = f"{recipe['name']}{''.join(recipe['ingredients'])}".encode('utf-8')
+    hash_num = int(hashlib.md5(content).hexdigest(), 16)
+    
+    # Get a number between 1 and 1000000 that isn't in seen_ids
+    base_id = (hash_num % 1000000) + 1
+    new_id = base_id
+    
+    # If the ID is already taken, increment until we find an unused one
+    while new_id in seen_ids:
+        new_id += 1
+        if new_id > 1000000:
+            new_id = 1  # wrap around if we somehow exceed our range
+    
+    return new_id
 
 def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
     """
@@ -16,8 +37,8 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
     """
     all_recipes = []
     seen_ids = set()
-    errors = []
-
+    warnings = []
+    
     try:
         # Create data/recipe directory structure if it doesn't exist
         os.makedirs(data_dir, exist_ok=True)
@@ -26,7 +47,10 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
         json_files = glob.glob(os.path.join(data_dir, '*.json'))
         
         if not json_files:
-            raise FileNotFoundError(f"No JSON recipe files found in {data_dir}. Please add recipe JSON files to the {data_dir} directory.")
+            raise FileNotFoundError(
+                f"No recipe files found in the {data_dir} directory. "
+                "To get started, add your recipe JSON files to this folder."
+            )
 
         for file_path in json_files:
             try:
@@ -37,41 +61,66 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
                     if not isinstance(recipes, list):
                         recipes = [recipes]
                     
-                    # Check for duplicate IDs
                     for recipe in recipes:
-                        recipe_id = recipe.get('id')
-                        if recipe_id is None:
-                            errors.append(f"Recipe without ID found in {file_path}")
+                        # Skip invalid recipes
+                        if not isinstance(recipe, dict):
+                            warnings.append(f"Skipped invalid recipe format in {file_path}")
                             continue
                             
-                        if recipe_id in seen_ids:
-                            errors.append(f"Duplicate recipe ID {recipe_id} found in {file_path}")
+                        # Check for required fields
+                        required_fields = ['name', 'cuisine', 'difficulty', 'prep_time', 'cook_time', 
+                                         'servings', 'ingredients', 'instructions']
+                        missing_fields = [field for field in required_fields if field not in recipe]
+                        if missing_fields:
+                            warnings.append(
+                                f"Recipe '{recipe.get('name', 'Unknown')}' in {file_path} "
+                                f"is missing required fields: {', '.join(missing_fields)}"
+                            )
                             continue
+
+                        # Handle recipe ID
+                        recipe_id = recipe.get('id')
+                        if recipe_id is None:
+                            # Generate a new unique ID
+                            recipe_id = generate_unique_id(recipe, seen_ids)
+                            recipe['id'] = recipe_id
+                            warnings.append(
+                                f"Auto-generated ID {recipe_id} for recipe '{recipe['name']}' "
+                                f"in {file_path}"
+                            )
+                        elif recipe_id in seen_ids:
+                            # Handle duplicate ID by generating a new one
+                            new_id = generate_unique_id(recipe, seen_ids)
+                            warnings.append(
+                                f"Found duplicate ID {recipe_id} for recipe '{recipe['name']}' "
+                                f"in {file_path}. Assigned new ID: {new_id}"
+                            )
+                            recipe['id'] = new_id
+                            recipe_id = new_id
                             
                         seen_ids.add(recipe_id)
                         all_recipes.append(recipe)
                         
             except json.JSONDecodeError:
-                errors.append(f"Invalid JSON format in {file_path}")
+                warnings.append(f"Could not read {file_path} - the file contains invalid JSON format")
             except Exception as e:
-                errors.append(f"Error processing {file_path}: {str(e)}")
+                warnings.append(f"Error processing {file_path}: {str(e)}")
 
         if not all_recipes:
-            raise ValueError("No valid recipes found in any file. Please ensure your JSON files contain valid recipe data.")
+            raise ValueError(
+                "No valid recipes found. Please ensure your recipe files are in the correct format "
+                "and contain all required fields: name, cuisine, difficulty, prep_time, cook_time, "
+                "servings, ingredients, and instructions."
+            )
 
         df = pd.DataFrame(all_recipes)
         
-        # Ensure required columns exist
-        required_columns = ['name', 'cuisine', 'difficulty', 'prep_time', 'cook_time', 'servings', 'ingredients', 'instructions']
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        if missing_columns:
-            raise ValueError(f"Missing required columns in recipe data: {', '.join(missing_columns)}")
-        
-        # If there were any errors, log them but continue if we have valid recipes
-        if errors:
-            print("Warnings while loading recipes:")
-            for error in errors:
-                print(f"- {error}")
+        # If there were any warnings, log them but continue if we have valid recipes
+        if warnings:
+            print("\nRecipe Loading Summary:")
+            for warning in warnings:
+                print(f"- {warning}")
+            print(f"\nSuccessfully loaded {len(all_recipes)} valid recipes.")
                 
         return df
 
@@ -101,18 +150,20 @@ def filter_recipes(df: pd.DataFrame,
     if cuisine and cuisine != "All":
         filtered_df = filtered_df[filtered_df['cuisine'] == cuisine]
 
-    return filtered_df.copy()  # Return a copy to avoid SettingWithCopyWarning
+    return filtered_df
 
 def format_recipe_details(recipe: Dict) -> str:
     """
     Format recipe details for display
     """
     details = f"""
-    ### Preparation Time: {recipe['prep_time']}
-    ### Cooking Time: {recipe['cook_time']}
-    ### Servings: {recipe['servings']}
-    ### Difficulty: {recipe['difficulty']}
-    ### Cuisine: {recipe['cuisine']}
+    ### {recipe['name']}
+    
+    #### Preparation Time: {recipe['prep_time']}
+    #### Cooking Time: {recipe['cook_time']}
+    #### Servings: {recipe['servings']}
+    #### Difficulty: {recipe['difficulty']}
+    #### Cuisine: {recipe['cuisine']}
     
     ## Ingredients
     """
