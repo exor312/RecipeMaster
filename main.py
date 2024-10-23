@@ -35,28 +35,37 @@ st.markdown("""
     .favorite-button {
         color: #ff4b4b;
     }
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 2rem 0;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 # Initialize session state
-if 'recipes_df' not in st.session_state:
-    try:
-        st.session_state.recipes_df = load_recipes()  # Using default 'data/recipe' directory
-    except FileNotFoundError as e:
-        st.error(str(e))
-        st.info("Please add recipe JSON files to the 'data/recipe' directory to get started.")
-        st.stop()
-    except ValueError as e:
-        st.error(str(e))
-        st.info("Please ensure your recipe JSON files contain all required fields.")
-        st.stop()
-    except Exception as e:
-        st.error(f"An unexpected error occurred: {str(e)}")
-        st.stop()
+if 'page_number' not in st.session_state:
+    st.session_state.page_number = 1
 
-# Initialize favorites in session state if not exists
 if 'favorites' not in st.session_state:
     st.session_state.favorites = set()
+
+if 'recipes_df' not in st.session_state:
+    with st.spinner('Loading recipes...'):
+        try:
+            st.session_state.recipes_df = load_recipes()
+        except FileNotFoundError as e:
+            st.error(str(e))
+            st.info("Please add recipe JSON files to the 'data/recipe' directory to get started.")
+            st.stop()
+        except ValueError as e:
+            st.error(str(e))
+            st.info("Please ensure your recipe JSON files contain all required fields.")
+            st.stop()
+        except Exception as e:
+            st.error(f"An unexpected error occurred: {str(e)}")
+            st.stop()
 
 # Sidebar filters
 st.sidebar.title("Recipe Filters")
@@ -84,13 +93,14 @@ else:
     show_favorites = False
 
 # Apply filters
-filtered_recipes = filter_recipes(
+filtered_recipes, total_pages = filter_recipes(
     st.session_state.recipes_df,
     search_term,
     selected_cuisine,
     selected_category,
     show_favorites,
-    st.session_state.favorites
+    st.session_state.favorites,
+    st.session_state.page_number
 )
 
 # Main content
@@ -125,15 +135,16 @@ else:
                 col1, col2 = st.columns([3, 1])
                 with col1:
                     if st.button(f"View Details", key=f"view_{recipe['id']}"):
-                        st.markdown("---")
-                        st.markdown(format_recipe_details(recipe))
-                        
-                        # Additional recipe metadata
-                        mcol1, mcol2 = st.columns(2)
-                        with mcol1:
-                            st.metric("Preparation Time", recipe['prep_time'])
-                        with mcol2:
-                            st.metric("Cooking Time", recipe['cook_time'])
+                        with st.spinner("Loading recipe details..."):
+                            st.markdown("---")
+                            st.markdown(format_recipe_details(recipe))
+                            
+                            # Additional recipe metadata
+                            mcol1, mcol2 = st.columns(2)
+                            with mcol1:
+                                st.metric("Preparation Time", recipe['preview_data']['prep_time'])
+                            with mcol2:
+                                st.metric("Cooking Time", recipe['preview_data']['cook_time'])
                 
                 with col2:
                     if st.button(f"{favorite_icon}", key=f"fav_{recipe['id']}", help="Add to favorites"):
@@ -141,7 +152,26 @@ else:
                             st.session_state.favorites.remove(recipe['id'])
                         else:
                             st.session_state.favorites.add(recipe['id'])
-                        st.experimental_rerun()
+                        st.rerun()
+
+    # Pagination
+    st.markdown("---")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col1:
+        if st.session_state.page_number > 1:
+            if st.button("← Previous"):
+                st.session_state.page_number -= 1
+                st.rerun()
+                
+    with col2:
+        st.markdown(f"<div style='text-align: center'>Page {st.session_state.page_number} of {total_pages}</div>", unsafe_allow_html=True)
+        
+    with col3:
+        if st.session_state.page_number < total_pages:
+            if st.button("Next →"):
+                st.session_state.page_number += 1
+                st.rerun()
 
 # Footer
 st.markdown("---")

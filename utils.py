@@ -4,51 +4,13 @@ import os
 import glob
 from typing import Dict, List, Optional, Set
 import hashlib
+import streamlit as st
 
-def generate_unique_id(recipe: Dict, seen_ids: set) -> int:
-    """
-    Generate a unique ID for a recipe based on its content
-    """
-    content = f"{recipe['name']}{''.join(recipe['ingredients'])}".encode('utf-8')
-    hash_num = int(hashlib.md5(content).hexdigest(), 16)
-    base_id = (hash_num % 1000000) + 1
-    new_id = base_id
-    
-    while new_id in seen_ids:
-        new_id += 1
-        if new_id > 1000000:
-            new_id = 1
-    
-    return new_id
-
-def parse_filipino_recipe(recipe: Dict) -> Dict:
-    """
-    Parse Filipino recipe format and convert to standard format
-    """
-    # Extract cooking time and convert to standard format
-    cook_time = recipe.get('cooking_time', '30 minutes')
-    
-    # Set default prep time as 15 minutes if not specified
-    prep_time = '15 minutes'
-    
-    # Map the fields to our standard format
-    standardized_recipe = {
-        'name': recipe.get('title', 'Unknown Filipino Recipe'),
-        'cuisine': 'Filipino',
-        'difficulty': 'Medium',  # Default difficulty
-        'prep_time': prep_time,
-        'cook_time': cook_time,
-        'servings': recipe.get('servings', '4'),  # Default to 4 servings if N/A
-        'ingredients': [ing.replace('▢ ', '') for ing in recipe.get('ingredients', [])],
-        'instructions': recipe.get('instructions', []),
-        'categories': [recipe.get('category', 'Filipino Dishes')]
-    }
-    
-    return standardized_recipe
-
+@st.cache_data
 def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
     """
     Load recipes from all JSON files in the data/recipe directory and convert to DataFrame
+    Cached using st.cache_data for better performance
     """
     all_recipes = []
     seen_ids = set()
@@ -69,10 +31,8 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
                 with open(file_path, 'r') as f:
                     data = json.load(f)
                     
-                    # Check if this is a Filipino recipe file
                     is_filipino = 'filipino_recipes_page_' in os.path.basename(file_path).lower()
                     
-                    # Handle both single recipe and recipe collection formats
                     recipes = data if isinstance(data, list) else data.get('recipes', [])
                     if not isinstance(recipes, list):
                         recipes = [recipes]
@@ -82,11 +42,9 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
                             warnings.append(f"Skipped invalid recipe format in {file_path}")
                             continue
                         
-                        # Parse Filipino recipes differently
                         if is_filipino:
                             recipe = parse_filipino_recipe(recipe)
                         
-                        # Check for required fields
                         required_fields = ['name', 'cuisine', 'difficulty', 'prep_time', 'cook_time', 
                                        'servings', 'ingredients', 'instructions']
                         missing_fields = [field for field in required_fields if field not in recipe]
@@ -98,11 +56,9 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
                             )
                             continue
 
-                        # Ensure categories exist
                         if 'categories' not in recipe:
                             recipe['categories'] = []
 
-                        # Handle recipe ID
                         recipe_id = recipe.get('id')
                         if recipe_id is None:
                             recipe_id = generate_unique_id(recipe, seen_ids)
@@ -121,7 +77,15 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
                             recipe_id = new_id
                             
                         seen_ids.add(recipe_id)
-                        all_recipes.append(recipe)
+                        # Only keep essential data for initial load
+                        all_recipes.append({
+                            'id': recipe['id'],
+                            'name': recipe['name'],
+                            'cuisine': recipe['cuisine'],
+                            'difficulty': recipe['difficulty'],
+                            'categories': recipe['categories'],
+                            'preview_data': recipe
+                        })
                         
             except json.JSONDecodeError:
                 warnings.append(f"Could not read {file_path} - the file contains invalid JSON format")
@@ -131,8 +95,7 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
         if not all_recipes:
             raise ValueError(
                 "No valid recipes found. Please ensure your recipe files are in the correct format "
-                "and contain all required fields: name, cuisine, difficulty, prep_time, cook_time, "
-                "servings, ingredients, and instructions."
+                "and contain all required fields."
             )
 
         df = pd.DataFrame(all_recipes)
@@ -148,43 +111,88 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
     except Exception as e:
         raise Exception(f"Failed to load recipes: {str(e)}")
 
+def generate_unique_id(recipe: Dict, seen_ids: set) -> int:
+    """Generate a unique ID for a recipe based on its content"""
+    content = f"{recipe['name']}{''.join(recipe['ingredients'])}".encode('utf-8')
+    hash_num = int(hashlib.md5(content).hexdigest(), 16)
+    base_id = (hash_num % 1000000) + 1
+    new_id = base_id
+    
+    while new_id in seen_ids:
+        new_id += 1
+        if new_id > 1000000:
+            new_id = 1
+    
+    return new_id
+
+def parse_filipino_recipe(recipe: Dict) -> Dict:
+    """Parse Filipino recipe format and convert to standard format"""
+    cook_time = recipe.get('cooking_time', '30 minutes')
+    prep_time = '15 minutes'
+    
+    standardized_recipe = {
+        'name': recipe.get('title', 'Unknown Filipino Recipe'),
+        'cuisine': 'Filipino',
+        'difficulty': 'Medium',
+        'prep_time': prep_time,
+        'cook_time': cook_time,
+        'servings': recipe.get('servings', '4'),
+        'ingredients': [ing.replace('▢ ', '') for ing in recipe.get('ingredients', [])],
+        'instructions': recipe.get('instructions', []),
+        'categories': [recipe.get('category', 'Filipino Dishes')]
+    }
+    
+    return standardized_recipe
+
+@st.cache_data
 def filter_recipes(df: pd.DataFrame, 
                   search_term: str = "", 
                   cuisine: Optional[str] = None,
                   category: Optional[str] = None,
                   show_favorites: bool = False,
-                  favorites: Optional[Set[int]] = None) -> pd.DataFrame:
+                  favorites: Optional[Set[int]] = None,
+                  page: int = 1,
+                  per_page: int = 10) -> tuple[pd.DataFrame, int]:
     """
     Filter recipes based on search term, cuisine, category, and favorites
+    Returns filtered DataFrame and total number of pages
     """
     if df.empty:
-        return df
+        return df, 0
 
-    filtered_df = df.copy()
-    
-    if search_term:
-        search_term = search_term.lower()
-        name_mask = filtered_df['name'].str.lower().str.contains(search_term, na=False)
-        ingredients_mask = filtered_df['ingredients'].apply(
-            lambda x: any(search_term in ingredient.lower() for ingredient in x)
-        )
-        filtered_df = filtered_df[name_mask | ingredients_mask]
+    with st.spinner('Filtering recipes...'):
+        filtered_df = df.copy()
+        
+        if search_term:
+            search_term = search_term.lower()
+            name_mask = filtered_df['name'].str.lower().str.contains(search_term, na=False)
+            filtered_df = filtered_df[name_mask]
 
-    if cuisine and cuisine != "All":
-        filtered_df = filtered_df[filtered_df['cuisine'] == cuisine]
+        if cuisine and cuisine != "All":
+            filtered_df = filtered_df[filtered_df['cuisine'] == cuisine]
 
-    if category and category != "All":
-        filtered_df = filtered_df[filtered_df['categories'].apply(lambda x: category in x if isinstance(x, list) else False)]
+        if category and category != "All":
+            filtered_df = filtered_df[filtered_df['categories'].apply(lambda x: category in x if isinstance(x, list) else False)]
 
-    if show_favorites and favorites is not None:
-        filtered_df = filtered_df[filtered_df['id'].isin(favorites)]
+        if show_favorites and favorites is not None:
+            filtered_df = filtered_df[filtered_df['id'].isin(favorites)]
 
-    return filtered_df
+        # Calculate total pages
+        total_recipes = len(filtered_df)
+        total_pages = (total_recipes + per_page - 1) // per_page
+
+        # Apply pagination
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        filtered_df = filtered_df.iloc[start_idx:end_idx]
+
+        return filtered_df, total_pages
 
 def format_recipe_details(recipe: Dict) -> str:
-    """
-    Format recipe details for display
-    """
+    """Format recipe details for display"""
+    if 'preview_data' in recipe:
+        recipe = recipe['preview_data']
+        
     details = f"""
     ### {recipe['name']}
     
