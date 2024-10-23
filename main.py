@@ -35,43 +35,24 @@ st.markdown("""
         background-color: #f0f2f6;
         padding: 1.5rem;
         border-radius: 5px;
+        margin-bottom: 1rem;
         width: 100%;
         box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
     }
     .recipe-header {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    .recipe-header h3 {
-        margin: 0;
-        font-size: 1.2rem;
-        line-height: 1.4;
-    }
-    .recipe-meta {
-        font-size: 0.9rem;
-        color: #666;
-    }
-    .recipe-categories {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.3rem;
+        margin-bottom: 1rem;
     }
     .recipe-actions {
         display: grid;
         grid-template-columns: 3fr 1fr;
         gap: 1rem;
-        margin-top: auto;
-        padding-top: 1rem;
-        border-top: 1px solid rgba(0,0,0,0.1);
+        align-items: center;
+        margin-top: 1rem;
     }
     .category-tag {
         display: inline-block;
         padding: 0.2rem 0.5rem;
+        margin: 0.2rem;
         border-radius: 15px;
         background-color: #e1e1e1;
         font-size: 0.8rem;
@@ -80,19 +61,9 @@ st.markdown("""
         color: #ff4b4b;
         font-size: 1.5rem;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
     }
     .favorite-button.active {
         color: #ff0000;
-    }
-    div[data-testid="stHorizontalBlock"] {
-        gap: 1rem;
-        align-items: stretch;
-    }
-    div[data-testid="stHorizontalBlock"] > div {
-        flex: 1;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -195,7 +166,7 @@ else:
         # Update favorites count display
         if show_favorites:
             total_favorites = len([r for _, r in st.session_state.recipes_df.iterrows() 
-                                if r['id'] in st.session_state.favorites])
+                                 if r['id'] in st.session_state.favorites])
             st.sidebar.markdown(f"💝 **{total_favorites} recipes** in favorites")
     else:
         selected_difficulty = None
@@ -238,12 +209,8 @@ else:
                     <div class="recipe-card">
                         <div class="recipe-header">
                             <h3>{recipe['name']}</h3>
-                            <div class="recipe-meta">⏱️ {recipe['preview_data']['cook_time']} | 📊 {recipe['difficulty']}</div>
-                            <div class="recipe-categories">{category_tags}</div>
-                        </div>
-                        <div class="recipe-actions">
-                            <div class="view-button"></div>
-                            <div class="fav-button"></div>
+                            <p>⏱️ {recipe['preview_data']['cook_time']} | 📊 {recipe['difficulty']}</p>
+                            <p>{category_tags}</p>
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
@@ -279,12 +246,8 @@ else:
                         <div class="recipe-card">
                             <div class="recipe-header">
                                 <h3>{recipe['name']}</h3>
-                                <div class="recipe-meta">⏱️ {recipe['preview_data']['cook_time']} | 📊 {recipe['difficulty']}</div>
-                                <div class="recipe-categories">{category_tags}</div>
-                            </div>
-                            <div class="recipe-actions">
-                                <div class="view-button"></div>
-                                <div class="fav-button"></div>
+                                <p>⏱️ {recipe['preview_data']['cook_time']} | 📊 {recipe['difficulty']}</p>
+                                <p>{category_tags}</p>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
