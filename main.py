@@ -30,9 +30,17 @@ st.markdown("""
 # Initialize session state
 if 'recipes_df' not in st.session_state:
     try:
-        st.session_state.recipes_df = load_recipes()  # Using default 'recipes' directory
+        st.session_state.recipes_df = load_recipes()  # Using default 'data/recipe' directory
+    except FileNotFoundError as e:
+        st.error(str(e))
+        st.info("Please add recipe JSON files to the 'data/recipe' directory to get started.")
+        st.stop()
+    except ValueError as e:
+        st.error(str(e))
+        st.info("Please ensure your recipe JSON files contain all required fields.")
+        st.stop()
     except Exception as e:
-        st.error(f"Error loading recipes: {str(e)}")
+        st.error(f"An unexpected error occurred: {str(e)}")
         st.stop()
 
 # Sidebar filters
@@ -42,8 +50,11 @@ st.sidebar.title("Recipe Filters")
 search_term = st.sidebar.text_input("Search recipes", "")
 
 # Cuisine filter
-cuisines = ["All"] + sorted(st.session_state.recipes_df['cuisine'].unique().tolist())
-selected_cuisine = st.sidebar.selectbox("Select Cuisine", cuisines)
+if not st.session_state.recipes_df.empty:
+    cuisines = ["All"] + sorted(st.session_state.recipes_df['cuisine'].unique().tolist())
+    selected_cuisine = st.sidebar.selectbox("Select Cuisine", cuisines)
+else:
+    selected_cuisine = None
 
 # Apply filters
 filtered_recipes = filter_recipes(
@@ -56,11 +67,14 @@ filtered_recipes = filter_recipes(
 st.title("🍳 Recipe Browser")
 
 if filtered_recipes.empty:
-    st.warning("No recipes found matching your criteria.")
+    if search_term or (selected_cuisine and selected_cuisine != "All"):
+        st.warning("No recipes found matching your criteria.")
+    else:
+        st.info("No recipes available. Please add some recipes to get started.")
 else:
     # Display recipes in a grid
     cols = st.columns(2)
-    for idx, recipe in filtered_recipes.iterrows():
+    for idx, (_, recipe) in enumerate(filtered_recipes.iterrows()):
         with cols[idx % 2]:
             with st.container():
                 st.markdown(f"""

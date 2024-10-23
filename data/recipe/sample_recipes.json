@@ -1,0 +1,63 @@
+{
+  "recipes": [
+    {
+      "id": 1,
+      "name": "Classic Spaghetti Carbonara",
+      "cuisine": "Italian",
+      "difficulty": "Medium",
+      "prep_time": "15 mins",
+      "cook_time": "20 mins",
+      "servings": 4,
+      "ingredients": [
+        "400g spaghetti",
+        "200g pancetta or guanciale",
+        "4 large eggs",
+        "100g Pecorino Romano cheese",
+        "100g Parmigiano-Reggiano",
+        "2 cloves garlic",
+        "Black pepper",
+        "Salt"
+      ],
+      "instructions": [
+        "Bring a large pot of salted water to boil",
+        "Cook spaghetti according to package instructions",
+        "While pasta cooks, crisp the pancetta in a large pan",
+        "Beat eggs with grated cheese and pepper in a bowl",
+        "Drain pasta, reserving some pasta water",
+        "Combine hot pasta with pancetta, then quickly stir in egg mixture",
+        "Add pasta water if needed for creaminess",
+        "Serve immediately with extra cheese and pepper"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Chicken Stir Fry",
+      "cuisine": "Asian",
+      "difficulty": "Easy",
+      "prep_time": "20 mins",
+      "cook_time": "15 mins",
+      "servings": 4,
+      "ingredients": [
+        "500g chicken breast, sliced",
+        "2 bell peppers",
+        "1 onion",
+        "2 carrots",
+        "3 cloves garlic",
+        "2 tbsp soy sauce",
+        "1 tbsp sesame oil",
+        "1 tbsp cornstarch",
+        "Vegetable oil"
+      ],
+      "instructions": [
+        "Slice chicken and vegetables into even pieces",
+        "Mix soy sauce, sesame oil, and cornstarch for sauce",
+        "Heat oil in a wok or large frying pan",
+        "Stir-fry chicken until golden",
+        "Remove chicken and cook vegetables until crisp-tender",
+        "Return chicken to pan and add sauce",
+        "Cook until sauce thickens",
+        "Serve hot with rice"
+      ]
+    }
+  ]
+}

@@ -4,9 +4,9 @@ import os
 import glob
 from typing import Dict, List, Optional
 
-def load_recipes(data_dir: str = 'recipes') -> pd.DataFrame:
+def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
     """
-    Load recipes from all JSON files in the recipes directory and convert to DataFrame
+    Load recipes from all JSON files in the data/recipe directory and convert to DataFrame
     
     Args:
         data_dir (str): Directory containing recipe JSON files
@@ -19,20 +19,23 @@ def load_recipes(data_dir: str = 'recipes') -> pd.DataFrame:
     errors = []
 
     try:
-        # Create recipes directory if it doesn't exist
+        # Create data/recipe directory structure if it doesn't exist
         os.makedirs(data_dir, exist_ok=True)
         
         # Find all JSON files in the recipes directory
         json_files = glob.glob(os.path.join(data_dir, '*.json'))
         
         if not json_files:
-            raise FileNotFoundError(f"No JSON recipe files found in {data_dir}")
+            raise FileNotFoundError(f"No JSON recipe files found in {data_dir}. Please add recipe JSON files to the {data_dir} directory.")
 
         for file_path in json_files:
             try:
                 with open(file_path, 'r') as f:
                     data = json.load(f)
-                    recipes = data.get('recipes', [])
+                    # Handle both single recipe and recipe collection formats
+                    recipes = data if isinstance(data, list) else data.get('recipes', [])
+                    if not isinstance(recipes, list):
+                        recipes = [recipes]
                     
                     # Check for duplicate IDs
                     for recipe in recipes:
@@ -54,9 +57,15 @@ def load_recipes(data_dir: str = 'recipes') -> pd.DataFrame:
                 errors.append(f"Error processing {file_path}: {str(e)}")
 
         if not all_recipes:
-            raise ValueError("No valid recipes found in any file")
+            raise ValueError("No valid recipes found in any file. Please ensure your JSON files contain valid recipe data.")
 
         df = pd.DataFrame(all_recipes)
+        
+        # Ensure required columns exist
+        required_columns = ['name', 'cuisine', 'difficulty', 'prep_time', 'cook_time', 'servings', 'ingredients', 'instructions']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise ValueError(f"Missing required columns in recipe data: {', '.join(missing_columns)}")
         
         # If there were any errors, log them but continue if we have valid recipes
         if errors:
@@ -92,7 +101,7 @@ def filter_recipes(df: pd.DataFrame,
     if cuisine and cuisine != "All":
         filtered_df = filtered_df[filtered_df['cuisine'] == cuisine]
 
-    return filtered_df
+    return filtered_df.copy()  # Return a copy to avoid SettingWithCopyWarning
 
 def format_recipe_details(recipe: Dict) -> str:
     """
