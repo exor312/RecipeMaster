@@ -8,6 +8,7 @@
       "prep_time": "15 mins",
       "cook_time": "20 mins",
       "servings": 4,
+      "categories": ["Pasta", "Main Course", "Quick Meals"],
       "ingredients": [
         "400g spaghetti",
         "200g pancetta or guanciale",
@@ -37,6 +38,7 @@
       "prep_time": "20 mins",
       "cook_time": "15 mins",
       "servings": 4,
+      "categories": ["Quick Meals", "Main Course", "Healthy"],
       "ingredients": [
         "500g chicken breast, sliced",
         "2 bell peppers",

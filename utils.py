@@ -28,12 +28,6 @@ def generate_unique_id(recipe: Dict, seen_ids: set) -> int:
 def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
     """
     Load recipes from all JSON files in the data/recipe directory and convert to DataFrame
-    
-    Args:
-        data_dir (str): Directory containing recipe JSON files
-        
-    Returns:
-        pd.DataFrame: Combined DataFrame of all recipes
     """
     all_recipes = []
     seen_ids = set()
@@ -77,6 +71,10 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
                                 f"is missing required fields: {', '.join(missing_fields)}"
                             )
                             continue
+
+                        # Ensure categories exist
+                        if 'categories' not in recipe:
+                            recipe['categories'] = []
 
                         # Handle recipe ID
                         recipe_id = recipe.get('id')
@@ -129,9 +127,10 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
 
 def filter_recipes(df: pd.DataFrame, 
                   search_term: str = "", 
-                  cuisine: Optional[str] = None) -> pd.DataFrame:
+                  cuisine: Optional[str] = None,
+                  category: Optional[str] = None) -> pd.DataFrame:
     """
-    Filter recipes based on search term and cuisine
+    Filter recipes based on search term, cuisine, and category
     """
     if df.empty:
         return df
@@ -150,6 +149,9 @@ def filter_recipes(df: pd.DataFrame,
     if cuisine and cuisine != "All":
         filtered_df = filtered_df[filtered_df['cuisine'] == cuisine]
 
+    if category and category != "All":
+        filtered_df = filtered_df[filtered_df['categories'].apply(lambda x: category in x)]
+
     return filtered_df
 
 def format_recipe_details(recipe: Dict) -> str:
@@ -164,6 +166,7 @@ def format_recipe_details(recipe: Dict) -> str:
     #### Servings: {recipe['servings']}
     #### Difficulty: {recipe['difficulty']}
     #### Cuisine: {recipe['cuisine']}
+    #### Categories: {', '.join(recipe.get('categories', []))}
     
     ## Ingredients
     """
