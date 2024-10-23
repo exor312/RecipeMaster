@@ -57,25 +57,17 @@ st.markdown("""
         background-color: #e1e1e1;
         font-size: 0.8rem;
     }
-    [data-testid="stButton"] > button[kind="secondary"] {
+    button[type="secondary"] {
         background-color: #FFD700 !important;
-        border: 2px solid #FFD700 !important;
-        color: #000000 !important;
+        border: none !important;
+        padding: 0.5rem !important;
         font-size: 24px !important;
-        padding: 0px 16px !important;
-        height: 42px !important;
+        color: black !important;
         border-radius: 4px !important;
-        transition: all 0.3s ease !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: 100% !important;
-        min-width: unset !important;
-        line-height: 1 !important;
+        transition: transform 0.2s !important;
     }
-    [data-testid="stButton"] > button[kind="secondary"]:hover {
+    button[type="secondary"]:hover {
         background-color: #FFB400 !important;
-        border-color: #FFB400 !important;
         transform: scale(1.05) !important;
     }
     </style>
@@ -129,7 +121,7 @@ if st.session_state.viewing_recipe is not None:
     with col2:
         is_favorite = recipe['id'] in st.session_state.favorites
         favorite_icon = "★" if is_favorite else "☆"
-        if st.button(favorite_icon, help="Add/Remove from favorites", key="detail_favorite", type="secondary"):
+        if st.button(favorite_icon, key="detail_favorite", help="Add/Remove from favorites", type="secondary"):
             if recipe['id'] in st.session_state.favorites:
                 st.session_state.favorites.remove(recipe['id'])
                 message = "Removed from favorites!"
@@ -138,7 +130,6 @@ if st.session_state.viewing_recipe is not None:
                 st.session_state.favorites.add(recipe['id'])
                 message = "Added to favorites!"
                 icon = "⭐"
-            
             st.toast(message, icon=icon)
             time.sleep(1.5)
             st.rerun()
