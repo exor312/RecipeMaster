@@ -89,12 +89,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-def show_persistent_toast(message: str, icon: str):
-    """Helper function to show multiple toasts with delays for persistence"""
-    for _ in range(3):  # Show toast 3 times
-        st.toast(message, icon=icon)
-        time.sleep(0.3)  # 0.3s delay between toasts
-
 # Initialize session state
 if 'page_number' not in st.session_state:
     st.session_state.page_number = 1
@@ -198,10 +192,10 @@ if st.session_state.viewing_recipe is not None:
             if st.button(favorite_icon, key=f"fav_detail_{recipe['id']}", help="Add/Remove from favorites"):
                 if recipe['id'] in st.session_state.favorites:
                     st.session_state.favorites.remove(recipe['id'])
-                    show_persistent_toast("Removed from favorites!", "✖️")
+                    st.toast("Removed from favorites!", icon="✖️")
                 else:
                     st.session_state.favorites.add(recipe['id'])
-                    show_persistent_toast("Added to favorites!", "⭐")
+                    st.toast("Added to favorites!", icon="⭐")
                 time.sleep(0.1)
                 st.rerun()
         
@@ -257,10 +251,10 @@ else:
             if st.button(f"{favorite_icon}", key=f"fav_{recipe['id']}", help="Add/Remove from favorites"):
                 if recipe['id'] in st.session_state.favorites:
                     st.session_state.favorites.remove(recipe['id'])
-                    show_persistent_toast("Removed from favorites!", "✖️")
+                    st.toast("Removed from favorites!", icon="✖️")
                 else:
                     st.session_state.favorites.add(recipe['id'])
-                    show_persistent_toast("Added to favorites!", "⭐")
+                    st.toast("Added to favorites!", icon="⭐")
                 time.sleep(0.1)
                 st.rerun()
 
