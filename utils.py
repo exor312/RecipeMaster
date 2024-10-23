@@ -136,7 +136,8 @@ def parse_filipino_recipe(recipe: Dict) -> Dict:
         'servings': recipe.get('servings', '4'),
         'ingredients': [ing.replace('▢ ', '') for ing in recipe.get('ingredients', [])],
         'instructions': recipe.get('instructions', []),
-        'categories': [recipe.get('category', 'Filipino Dishes')]
+        'categories': [recipe.get('category', 'Filipino Dishes')],
+        'url': recipe.get('url', '')
     }
     
     return standardized_recipe
@@ -277,6 +278,23 @@ def format_recipe_details(recipe: Dict) -> str:
             border-radius: 15px;
             font-size: 0.9em;
         }
+        .recipe-url {
+            background-color: #fff;
+            padding: 1.5em;
+            border-radius: 8px;
+            margin: 2em 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .recipe-url a {
+            color: #FF4B4B;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+        .recipe-url a:hover {
+            color: #ff7676;
+        }
     </style>
     """
 
@@ -328,8 +346,18 @@ def format_recipe_details(recipe: Dict) -> str:
             '</div>'
         )
     instructions_html += '</div>'
+
+    # Add URL section if available
+    url_html = ''
+    if recipe.get('url'):
+        url_html = (
+            '<div class="recipe-url">'
+            '<h2>Original Recipe</h2>'
+            f'<a href="{recipe["url"]}" target="_blank">View original recipe source</a>'
+            '</div>'
+        )
     
     # Combine all sections
-    complete_html = css + title_html + categories_html + info_html + ingredients_html + instructions_html
+    complete_html = css + title_html + categories_html + info_html + ingredients_html + instructions_html + url_html
     
     return complete_html
