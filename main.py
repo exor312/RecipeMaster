@@ -34,12 +34,46 @@ st.markdown("""
     }
     .favorite-button {
         color: #ff4b4b;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .favorite-button:hover {
+        transform: scale(1.1);
+    }
+    .favorite-button.active {
+        color: #ff0000;
     }
     .pagination {
         display: flex;
         justify-content: center;
         align-items: center;
         margin: 2rem 0;
+    }
+    .stSpinner {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 999;
+    }
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+        z-index: 998;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .center-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -51,7 +85,9 @@ if 'page_number' not in st.session_state:
 if 'favorites' not in st.session_state:
     st.session_state.favorites = set()
 
+# Load recipes with loading indicator
 if 'recipes_df' not in st.session_state:
+    st.markdown('<div class="loading-overlay"></div>', unsafe_allow_html=True)
     with st.spinner('Loading recipes...'):
         try:
             st.session_state.recipes_df = load_recipes()
@@ -87,12 +123,15 @@ if not st.session_state.recipes_df.empty:
 
     # Favorites filter
     show_favorites = st.sidebar.checkbox("Show Favorites Only")
+    if show_favorites:
+        st.sidebar.markdown(f"💝 **{len(st.session_state.favorites)} recipes** in favorites")
 else:
     selected_cuisine = None
     selected_category = None
     show_favorites = False
 
-# Apply filters
+# Apply filters with loading indicator
+st.markdown('<div class="loading-overlay"></div>', unsafe_allow_html=True)
 filtered_recipes, total_pages = filter_recipes(
     st.session_state.recipes_df,
     search_term,
@@ -120,9 +159,10 @@ else:
                 # Create category tags HTML
                 category_tags = ''.join([f'<span class="category-tag">{cat}</span>' for cat in recipe['categories']])
                 
-                # Favorite button
+                # Favorite button with active state
                 is_favorite = recipe['id'] in st.session_state.favorites
                 favorite_icon = "★" if is_favorite else "☆"
+                favorite_class = "favorite-button active" if is_favorite else "favorite-button"
                 
                 st.markdown(f"""
                     <div class="recipe-card">
@@ -135,6 +175,7 @@ else:
                 col1, col2 = st.columns([3, 1])
                 with col1:
                     if st.button(f"View Details", key=f"view_{recipe['id']}"):
+                        st.markdown('<div class="loading-overlay"></div>', unsafe_allow_html=True)
                         with st.spinner("Loading recipe details..."):
                             st.markdown("---")
                             st.markdown(format_recipe_details(recipe))
@@ -147,11 +188,13 @@ else:
                                 st.metric("Cooking Time", recipe['preview_data']['cook_time'])
                 
                 with col2:
-                    if st.button(f"{favorite_icon}", key=f"fav_{recipe['id']}", help="Add to favorites"):
+                    if st.button(f"{favorite_icon}", key=f"fav_{recipe['id']}", help="Add to favorites", type="primary" if is_favorite else "secondary"):
                         if recipe['id'] in st.session_state.favorites:
                             st.session_state.favorites.remove(recipe['id'])
+                            st.success(f"Removed '{recipe['name']}' from favorites!")
                         else:
                             st.session_state.favorites.add(recipe['id'])
+                            st.success(f"Added '{recipe['name']}' to favorites!")
                         st.rerun()
 
     # Pagination
