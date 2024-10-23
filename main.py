@@ -86,11 +86,6 @@ st.markdown("""
     .back-button {
         margin-bottom: 1rem;
     }
-    .share-options {
-        display: flex;
-        gap: 1rem;
-        margin: 1rem 0;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -131,8 +126,8 @@ st.title("🍳 Recipe Browser")
 if st.session_state.viewing_recipe is not None:
     recipe = st.session_state.viewing_recipe
     
-    # Normal view with sharing options
-    col1, col2, col3 = st.columns([2, 1, 1])
+    # View with back and favorite buttons
+    col1, col2 = st.columns([4, 1])
     
     with col1:
         if st.button("← Back to Recipes", type="primary"):
@@ -140,12 +135,6 @@ if st.session_state.viewing_recipe is not None:
             st.rerun()
     
     with col2:
-        if st.button("📧 Email Recipe"):
-            recipe_text = format_recipe_details(recipe.to_dict())
-            mailto_link = f"mailto:?subject={recipe['name']}&body={recipe_text}"
-            st.markdown(f'<a href="{mailto_link}" target="_blank">Click to open email</a>', unsafe_allow_html=True)
-    
-    with col3:
         is_favorite = recipe['id'] in st.session_state.favorites
         favorite_icon = "★" if is_favorite else "☆"
         if st.button(favorite_icon, help="Add/Remove from favorites"):
@@ -158,11 +147,8 @@ if st.session_state.viewing_recipe is not None:
                 message = "Added to favorites!"
                 icon = "⭐"
             
-            for _ in range(4):  # Show toast 4 times sequentially
-                st.toast(message, icon=icon)
-                time.sleep(0.2)  # 0.2s delay between toasts
-            
-            time.sleep(0.1)
+            st.toast(message, icon=icon)
+            time.sleep(1.5)  # Longer delay before rerun
             st.rerun()
     
     st.markdown("---")
@@ -275,11 +261,8 @@ else:
                         message = "Added to favorites!"
                         icon = "⭐"
                     
-                    for _ in range(4):  # Show toast 4 times sequentially
-                        st.toast(message, icon=icon)
-                        time.sleep(0.2)  # 0.2s delay between toasts
-                    
-                    time.sleep(0.1)
+                    st.toast(message, icon=icon)
+                    time.sleep(1.5)  # Longer delay before rerun
                     st.rerun()
 
         st.markdown('</div>', unsafe_allow_html=True)
