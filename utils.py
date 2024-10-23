@@ -241,6 +241,7 @@ def format_recipe_details(recipe: Dict) -> str:
             background-color: #f8f9fa;
             border-radius: 6px;
             border-left: 4px solid #FF4B4B;
+            margin: 0.5em 0;
         }
         .instructions-section {
             background-color: #fff;
@@ -313,9 +314,10 @@ def format_recipe_details(recipe: Dict) -> str:
     </div>
     
     <div class="ingredients-section">
-        <h2>📝 Ingredients</h2>
+        <h2>Ingredients</h2>
         <div class="ingredients-grid">
-            {' '.join(f'<div class="ingredient-item">{ingredient}</div>' for ingredient in recipe['ingredients'])}
+            {' '.join(f'<div class="ingredient-item">{ingredient}</div>' 
+                     for ingredient in recipe['ingredients'])}
         </div>
     </div>
     
