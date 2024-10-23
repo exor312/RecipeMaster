@@ -77,7 +77,6 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
                             recipe_id = new_id
                             
                         seen_ids.add(recipe_id)
-                        # Only keep essential data for initial load
                         all_recipes.append({
                             'id': recipe['id'],
                             'name': recipe['name'],
@@ -160,11 +159,9 @@ def filter_recipes(df: pd.DataFrame,
     with st.spinner('Filtering recipes...'):
         filtered_df = df.copy()
 
-        # Apply favorites filter first if show_favorites is True
         if show_favorites and favorites is not None:
             filtered_df = filtered_df[filtered_df['id'].isin(favorites)]
             
-        # Apply other filters
         if search_term:
             search_term = search_term.lower()
             name_mask = filtered_df['name'].str.lower().str.contains(search_term, na=False)
@@ -176,11 +173,9 @@ def filter_recipes(df: pd.DataFrame,
         if category and category != "All":
             filtered_df = filtered_df[filtered_df['categories'].apply(lambda x: category in x if isinstance(x, list) else False)]
 
-        # Calculate total pages
         total_recipes = len(filtered_df)
         total_pages = (total_recipes + per_page - 1) // per_page
 
-        # Apply pagination
         start_idx = (page - 1) * per_page
         end_idx = start_idx + per_page
         paginated_df = filtered_df.iloc[start_idx:end_idx]
@@ -293,43 +288,45 @@ def format_recipe_details(recipe: Dict) -> str:
                              for cat in recipe.get('categories', []))
     categories_html += '</div>'
     
-    info_html = f'''
-    <div class="recipe-info">
-        <div class="info-item">
-            <div class="info-label">Prep Time</div>
-            <div class="info-value">{recipe['prep_time']}</div>
-        </div>
-        <div class="info-item">
-            <div class="info-label">Cook Time</div>
-            <div class="info-value">{recipe['cook_time']}</div>
-        </div>
-        <div class="info-item">
-            <div class="info-label">Servings</div>
-            <div class="info-value">{recipe['servings']}</div>
-        </div>
-        <div class="info-item">
-            <div class="info-label">Difficulty</div>
-            <div class="info-value">{recipe['difficulty']}</div>
-        </div>
-    </div>
-    '''
+    info_html = (
+        '<div class="recipe-info">'
+        f'<div class="info-item">'
+        f'<div class="info-label">Prep Time</div>'
+        f'<div class="info-value">{recipe["prep_time"]}</div>'
+        '</div>'
+        f'<div class="info-item">'
+        f'<div class="info-label">Cook Time</div>'
+        f'<div class="info-value">{recipe["cook_time"]}</div>'
+        '</div>'
+        f'<div class="info-item">'
+        f'<div class="info-label">Servings</div>'
+        f'<div class="info-value">{recipe["servings"]}</div>'
+        '</div>'
+        f'<div class="info-item">'
+        f'<div class="info-label">Difficulty</div>'
+        f'<div class="info-value">{recipe["difficulty"]}</div>'
+        '</div>'
+        '</div>'
+    )
     
     ingredients_html = '<div class="ingredients-section">'
     ingredients_html += '<h2>Ingredients</h2>'
     ingredients_html += '<div class="ingredients-grid">'
-    for ingredient in recipe['ingredients']:
-        ingredients_html += f'<div class="ingredient-item">{ingredient}</div>'
+    ingredients_html += ''.join(
+        f'<div class="ingredient-item">{ingredient}</div>'
+        for ingredient in recipe['ingredients']
+    )
     ingredients_html += '</div></div>'
     
     instructions_html = '<div class="instructions-section">'
     instructions_html += '<h2>Instructions</h2>'
     for i, instruction in enumerate(recipe['instructions']):
-        instructions_html += f'''
-        <div class="instruction-step">
-            <div class="step-number">{i+1}</div>
-            <div>{instruction}</div>
-        </div>
-        '''
+        instructions_html += (
+            f'<div class="instruction-step">'
+            f'<div class="step-number">{i+1}</div>'
+            f'<div>{instruction}</div>'
+            '</div>'
+        )
     instructions_html += '</div>'
     
     # Combine all sections
