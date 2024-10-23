@@ -51,23 +51,9 @@ st.markdown("""
         margin: 2rem 0;
     }
     .stSpinner {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        position: relative;
+        pointer-events: none;
         z-index: 999;
-    }
-    .loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(255, 255, 255, 0.7);
-        z-index: 998;
-        display: flex;
-        justify-content: center;
-        align-items: center;
     }
     .center-container {
         display: flex;
@@ -87,7 +73,6 @@ if 'favorites' not in st.session_state:
 
 # Load recipes with loading indicator
 if 'recipes_df' not in st.session_state:
-    st.markdown('<div class="loading-overlay"></div>', unsafe_allow_html=True)
     with st.spinner('Loading recipes...'):
         try:
             st.session_state.recipes_df = load_recipes()
@@ -130,8 +115,7 @@ else:
     selected_category = None
     show_favorites = False
 
-# Apply filters with loading indicator
-st.markdown('<div class="loading-overlay"></div>', unsafe_allow_html=True)
+# Apply filters
 filtered_recipes, total_pages = filter_recipes(
     st.session_state.recipes_df,
     search_term,
@@ -175,7 +159,6 @@ else:
                 col1, col2 = st.columns([3, 1])
                 with col1:
                     if st.button(f"View Details", key=f"view_{recipe['id']}"):
-                        st.markdown('<div class="loading-overlay"></div>', unsafe_allow_html=True)
                         with st.spinner("Loading recipe details..."):
                             st.markdown("---")
                             st.markdown(format_recipe_details(recipe))
