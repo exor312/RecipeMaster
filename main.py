@@ -120,7 +120,7 @@ if 'recipes_df' not in st.session_state:
 st.title("🍳 Recipe Browser")
 
 # Sidebar filters (only show when not viewing recipe details)
-if not st.session_state.viewing_recipe:
+if st.session_state.viewing_recipe is None:
     st.sidebar.title("Recipe Filters")
     
     # Search box
@@ -180,10 +180,10 @@ if st.session_state.viewing_recipe is not None:
             if st.button(favorite_icon, key=f"fav_detail_{recipe['id']}", help="Add/Remove from favorites"):
                 if recipe['id'] in st.session_state.favorites:
                     st.session_state.favorites.remove(recipe['id'])
-                    st.toast("Removed from favorites!", icon="✖️", duration=3)
+                    st.toast("Removed from favorites!", icon="✖️")
                 else:
                     st.session_state.favorites.add(recipe['id'])
-                    st.toast("Added to favorites!", icon="⭐", duration=3)
+                    st.toast("Added to favorites!", icon="⭐")
                 time.sleep(0.1)
                 st.rerun()
         
@@ -191,7 +191,7 @@ if st.session_state.viewing_recipe is not None:
         st.markdown(format_recipe_details(recipe_dict))
 
 # Recipe grid view
-elif filtered_recipes.empty:
+elif 'filtered_recipes' in locals() and filtered_recipes.empty:
     if search_term or (selected_cuisine and selected_cuisine != "All") or (selected_category and selected_category != "All") or show_favorites:
         st.warning("No recipes found matching your criteria.")
     else:
@@ -237,10 +237,10 @@ else:
             if st.button(f"{favorite_icon}", key=f"fav_{recipe['id']}", help="Add/Remove from favorites"):
                 if recipe['id'] in st.session_state.favorites:
                     st.session_state.favorites.remove(recipe['id'])
-                    st.toast("Removed from favorites!", icon="✖️", duration=3)
+                    st.toast("Removed from favorites!", icon="✖️")
                 else:
                     st.session_state.favorites.add(recipe['id'])
-                    st.toast("Added to favorites!", icon="⭐", duration=3)
+                    st.toast("Added to favorites!", icon="⭐")
                 time.sleep(0.1)
                 st.rerun()
 
