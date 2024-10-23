@@ -188,28 +188,146 @@ def filter_recipes(df: pd.DataFrame,
         return paginated_df, total_pages
 
 def format_recipe_details(recipe: Dict) -> str:
-    """Format recipe details for display"""
+    """Format recipe details for display with improved layout"""
     if 'preview_data' in recipe:
         recipe = recipe['preview_data']
         
-    details = f"""
-    ### {recipe['name']}
-    
-    #### Preparation Time: {recipe['prep_time']}
-    #### Cooking Time: {recipe['cook_time']}
-    #### Servings: {recipe['servings']}
-    #### Difficulty: {recipe['difficulty']}
-    #### Categories: {', '.join(recipe.get('categories', []))}
-    
-    ## Ingredients
+    # Add custom CSS for better styling
+    css = """
+    <style>
+        .recipe-title {
+            color: #1f1f1f;
+            font-size: 2.5em;
+            margin-bottom: 1em;
+            text-align: center;
+        }
+        .recipe-info {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1em;
+            margin: 2em 0;
+            padding: 1em;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .info-item {
+            text-align: center;
+            padding: 1em;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 0.5em;
+        }
+        .info-value {
+            font-size: 1.2em;
+            color: #333;
+        }
+        .ingredients-section {
+            background-color: #fff;
+            padding: 2em;
+            border-radius: 8px;
+            margin: 2em 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .ingredients-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1em;
+            margin-top: 1em;
+        }
+        .ingredient-item {
+            padding: 0.8em;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #FF4B4B;
+        }
+        .instructions-section {
+            background-color: #fff;
+            padding: 2em;
+            border-radius: 8px;
+            margin: 2em 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .instruction-step {
+            margin: 1em 0;
+            padding: 1em;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            display: flex;
+            align-items: flex-start;
+        }
+        .step-number {
+            background-color: #FF4B4B;
+            color: white;
+            min-width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1em;
+        }
+        .categories-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5em;
+            margin: 1em 0;
+        }
+        .category-tag {
+            background-color: #FF4B4B;
+            color: white;
+            padding: 0.3em 0.8em;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+    </style>
     """
     
-    for ingredient in recipe['ingredients']:
-        details += f"- {ingredient}\n"
+    # Build the HTML structure
+    html = f"""
+    {css}
+    <div class="recipe-title">{recipe['name']}</div>
     
-    details += "\n## Instructions\n"
+    <div class="categories-section">
+        {' '.join(f'<span class="category-tag">{cat}</span>' for cat in recipe.get('categories', []))}
+    </div>
     
-    for i, instruction in enumerate(recipe['instructions'], 1):
-        details += f"{i}. {instruction}\n"
-        
-    return details
+    <div class="recipe-info">
+        <div class="info-item">
+            <div class="info-label">Prep Time</div>
+            <div class="info-value">{recipe['prep_time']}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Cook Time</div>
+            <div class="info-value">{recipe['cook_time']}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Servings</div>
+            <div class="info-value">{recipe['servings']}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Difficulty</div>
+            <div class="info-value">{recipe['difficulty']}</div>
+        </div>
+    </div>
+    
+    <div class="ingredients-section">
+        <h2>📝 Ingredients</h2>
+        <div class="ingredients-grid">
+            {' '.join(f'<div class="ingredient-item">{ingredient}</div>' for ingredient in recipe['ingredients'])}
+        </div>
+    </div>
+    
+    <div class="instructions-section">
+        <h2>👩‍🍳 Instructions</h2>
+        {''.join(f'''
+            <div class="instruction-step">
+                <div class="step-number">{i+1}</div>
+                <div>{instruction}</div>
+            </div>
+        ''' for i, instruction in enumerate(recipe['instructions']))}
+    </div>
+    """
+    
+    return html
