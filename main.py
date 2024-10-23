@@ -30,8 +30,8 @@ st.markdown("""
 # Initialize session state
 if 'recipes_df' not in st.session_state:
     try:
-        st.session_state.recipes_df = load_recipes('data/recipes.json')
-    except (FileNotFoundError, ValueError) as e:
+        st.session_state.recipes_df = load_recipes('data')  # Changed to use directory
+    except Exception as e:
         st.error(f"Error loading recipes: {str(e)}")
         st.stop()
 

@@ -1,20 +1,70 @@
 import json
 import pandas as pd
+import os
+import glob
 from typing import Dict, List, Optional
 
-def load_recipes(file_path: str) -> pd.DataFrame:
+def load_recipes(data_dir: str = 'data') -> pd.DataFrame:
     """
-    Load recipes from JSON file and convert to DataFrame
+    Load recipes from all JSON files in the data directory and convert to DataFrame
+    
+    Args:
+        data_dir (str): Directory containing recipe JSON files
+        
+    Returns:
+        pd.DataFrame: Combined DataFrame of all recipes
     """
+    all_recipes = []
+    seen_ids = set()
+    errors = []
+
     try:
-        with open(file_path, 'r') as f:
-            data = json.load(f)
-            recipes = data.get('recipes', [])
-            return pd.DataFrame(recipes)
-    except FileNotFoundError:
-        raise FileNotFoundError("Recipe data file not found")
-    except json.JSONDecodeError:
-        raise ValueError("Invalid JSON format in recipe file")
+        # Find all JSON files in the data directory
+        json_files = glob.glob(os.path.join(data_dir, '*.json'))
+        
+        if not json_files:
+            raise FileNotFoundError(f"No JSON recipe files found in {data_dir}")
+
+        for file_path in json_files:
+            try:
+                with open(file_path, 'r') as f:
+                    data = json.load(f)
+                    recipes = data.get('recipes', [])
+                    
+                    # Check for duplicate IDs
+                    for recipe in recipes:
+                        recipe_id = recipe.get('id')
+                        if recipe_id is None:
+                            errors.append(f"Recipe without ID found in {file_path}")
+                            continue
+                            
+                        if recipe_id in seen_ids:
+                            errors.append(f"Duplicate recipe ID {recipe_id} found in {file_path}")
+                            continue
+                            
+                        seen_ids.add(recipe_id)
+                        all_recipes.append(recipe)
+                        
+            except json.JSONDecodeError:
+                errors.append(f"Invalid JSON format in {file_path}")
+            except Exception as e:
+                errors.append(f"Error processing {file_path}: {str(e)}")
+
+        if not all_recipes:
+            raise ValueError("No valid recipes found in any file")
+
+        df = pd.DataFrame(all_recipes)
+        
+        # If there were any errors, log them but continue if we have valid recipes
+        if errors:
+            print("Warnings while loading recipes:")
+            for error in errors:
+                print(f"- {error}")
+                
+        return df
+
+    except Exception as e:
+        raise Exception(f"Failed to load recipes: {str(e)}")
 
 def filter_recipes(df: pd.DataFrame, 
                   search_term: str = "", 
