@@ -78,10 +78,13 @@ st.markdown("""
         margin: 2rem 0;
     }
     .recipe-details {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-        margin: 1rem 0;
+        background-color: #f8f9fa;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-top: 1rem;
+    }
+    .back-button {
+        margin-bottom: 1rem;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -92,6 +95,9 @@ if 'page_number' not in st.session_state:
 
 if 'favorites' not in st.session_state:
     st.session_state.favorites = set()
+
+if 'viewing_recipe' not in st.session_state:
+    st.session_state.viewing_recipe = None
 
 # Load recipes
 if 'recipes_df' not in st.session_state:
@@ -110,48 +116,82 @@ if 'recipes_df' not in st.session_state:
             st.error(f"An unexpected error occurred: {str(e)}")
             st.stop()
 
-# Sidebar filters
-st.sidebar.title("Recipe Filters")
-
-# Search box
-search_term = st.sidebar.text_input("Search recipes", "")
-
-# Cuisine filter
-if not st.session_state.recipes_df.empty:
-    cuisines = ["All"] + sorted(st.session_state.recipes_df['cuisine'].unique().tolist())
-    selected_cuisine = st.sidebar.selectbox("Select Cuisine", cuisines)
-
-    # Category filter
-    all_categories = set()
-    for categories in st.session_state.recipes_df['categories']:
-        all_categories.update(categories)
-    categories_list = ["All"] + sorted(list(all_categories))
-    selected_category = st.sidebar.selectbox("Select Category", categories_list)
-
-    # Favorites filter
-    show_favorites = st.sidebar.checkbox("Show Favorites Only")
-    if show_favorites:
-        st.sidebar.markdown(f"💝 **{len(st.session_state.favorites)} recipes** in favorites")
-else:
-    selected_cuisine = None
-    selected_category = None
-    show_favorites = False
-
-# Apply filters
-filtered_recipes, total_pages = filter_recipes(
-    st.session_state.recipes_df,
-    search_term,
-    selected_cuisine,
-    selected_category,
-    show_favorites,
-    st.session_state.favorites,
-    st.session_state.page_number
-)
-
-# Main content
+# Main title
 st.title("🍳 Recipe Browser")
 
-if filtered_recipes.empty:
+# Sidebar filters (only show when not viewing recipe details)
+if not st.session_state.viewing_recipe:
+    st.sidebar.title("Recipe Filters")
+    
+    # Search box
+    search_term = st.sidebar.text_input("Search recipes", "")
+    
+    # Cuisine filter
+    if not st.session_state.recipes_df.empty:
+        cuisines = ["All"] + sorted(st.session_state.recipes_df['cuisine'].unique().tolist())
+        selected_cuisine = st.sidebar.selectbox("Select Cuisine", cuisines)
+    
+        # Category filter
+        all_categories = set()
+        for categories in st.session_state.recipes_df['categories']:
+            all_categories.update(categories)
+        categories_list = ["All"] + sorted(list(all_categories))
+        selected_category = st.sidebar.selectbox("Select Category", categories_list)
+    
+        # Favorites filter
+        show_favorites = st.sidebar.checkbox("Show Favorites Only")
+        if show_favorites:
+            st.sidebar.markdown(f"💝 **{len(st.session_state.favorites)} recipes** in favorites")
+    else:
+        selected_cuisine = None
+        selected_category = None
+        show_favorites = False
+
+    # Apply filters
+    filtered_recipes, total_pages = filter_recipes(
+        st.session_state.recipes_df,
+        search_term,
+        selected_cuisine,
+        selected_category,
+        show_favorites,
+        st.session_state.favorites,
+        st.session_state.page_number
+    )
+
+# Recipe detail view
+if st.session_state.viewing_recipe is not None:
+    # Back button
+    if st.button("← Back to Recipes", key="back_button", type="primary"):
+        st.session_state.viewing_recipe = None
+        st.rerun()
+    
+    recipe = st.session_state.viewing_recipe
+    st.markdown("---")
+    
+    # Recipe details
+    with st.container():
+        # Show favorite button in details view
+        col1, col2 = st.columns([6, 1])
+        with col1:
+            st.markdown(f"## {recipe['name']}")
+        with col2:
+            is_favorite = recipe['id'] in st.session_state.favorites
+            favorite_icon = "★" if is_favorite else "☆"
+            if st.button(favorite_icon, key=f"fav_detail_{recipe['id']}", help="Add/Remove from favorites"):
+                if recipe['id'] in st.session_state.favorites:
+                    st.session_state.favorites.remove(recipe['id'])
+                    st.toast("Removed from favorites!", icon="✖️", duration=3)
+                else:
+                    st.session_state.favorites.add(recipe['id'])
+                    st.toast("Added to favorites!", icon="⭐", duration=3)
+                time.sleep(0.1)
+                st.rerun()
+        
+        recipe_dict = recipe.to_dict()
+        st.markdown(format_recipe_details(recipe_dict))
+
+# Recipe grid view
+elif filtered_recipes.empty:
     if search_term or (selected_cuisine and selected_cuisine != "All") or (selected_category and selected_category != "All") or show_favorites:
         st.warning("No recipes found matching your criteria.")
     else:
@@ -190,37 +230,23 @@ else:
         col1, col2 = st.columns([3, 1])
         with col1:
             if st.button(f"View Details", key=f"view_{recipe['id']}"):
-                with st.spinner("Loading recipe details..."):
-                    st.markdown("---")
-                    recipe_dict = recipe.to_dict()
-                    st.markdown(format_recipe_details(recipe_dict))
-                    
-                    # Recipe metadata using CSS Grid
-                    st.markdown(f"""
-                        <div class="recipe-details">
-                            <div>
-                                <strong>Preparation Time:</strong> {recipe['preview_data']['prep_time']}
-                            </div>
-                            <div>
-                                <strong>Cooking Time:</strong> {recipe['preview_data']['cook_time']}
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                st.session_state.viewing_recipe = recipe
+                st.rerun()
         
         with col2:
             if st.button(f"{favorite_icon}", key=f"fav_{recipe['id']}", help="Add/Remove from favorites"):
                 if recipe['id'] in st.session_state.favorites:
                     st.session_state.favorites.remove(recipe['id'])
-                    st.toast(f"Removed from favorites!", icon="✖️")
+                    st.toast("Removed from favorites!", icon="✖️", duration=3)
                 else:
                     st.session_state.favorites.add(recipe['id'])
-                    st.toast(f"Added to favorites!", icon="⭐")
-                time.sleep(0.1)  # Small delay to ensure toast appears
+                    st.toast("Added to favorites!", icon="⭐", duration=3)
+                time.sleep(0.1)
                 st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Pagination
+    # Pagination (only show in grid view)
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 2, 1])
     
