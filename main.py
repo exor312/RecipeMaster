@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import time
-from utils import load_recipes, filter_recipes, format_recipe_details, get_printable_recipe
+from utils import load_recipes, filter_recipes, format_recipe_details
 
 # Page configuration
 st.set_page_config(
@@ -91,28 +91,6 @@ st.markdown("""
         gap: 1rem;
         margin: 1rem 0;
     }
-    @media print {
-        .no-print {
-            display: none !important;
-        }
-        .print-recipe {
-            display: block !important;
-        }
-        .print-recipe h1 {
-            font-size: 24px;
-            margin-bottom: 1rem;
-        }
-        .print-recipe h2 {
-            font-size: 20px;
-            margin: 1rem 0;
-        }
-        .print-recipe ul, .print-recipe ol {
-            margin-left: 2rem;
-        }
-        .print-recipe li {
-            margin: 0.5rem 0;
-        }
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -128,9 +106,6 @@ if 'viewing_recipe' not in st.session_state:
 
 if 'prev_show_favorites' not in st.session_state:
     st.session_state.prev_show_favorites = False
-
-if 'print_view' not in st.session_state:
-    st.session_state.print_view = False
 
 # Load recipes
 if 'recipes_df' not in st.session_state:
@@ -156,53 +131,48 @@ st.title("🍳 Recipe Browser")
 if st.session_state.viewing_recipe is not None:
     recipe = st.session_state.viewing_recipe
     
-    if st.session_state.print_view:
-        # Print view
-        st.markdown(get_printable_recipe(recipe), unsafe_allow_html=True)
-        if st.button("← Back to Recipe", type="primary"):
-            st.session_state.print_view = False
+    # Normal view with sharing options
+    col1, col2, col3 = st.columns([2, 1, 1])
+    
+    with col1:
+        if st.button("← Back to Recipes", type="primary"):
+            st.session_state.viewing_recipe = None
             st.rerun()
-    else:
-        # Normal view with sharing options
-        col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
-        
-        with col1:
-            if st.button("← Back to Recipes", type="primary"):
-                st.session_state.viewing_recipe = None
-                st.rerun()
-        
-        with col2:
-            if st.button("🖨️ Print Recipe"):
-                st.session_state.print_view = True
-                st.rerun()
-        
-        with col3:
-            if st.button("📧 Email Recipe"):
-                recipe_text = format_recipe_details(recipe.to_dict())
-                mailto_link = f"mailto:?subject={recipe['name']}&body={recipe_text}"
-                st.markdown(f'<a href="{mailto_link}" target="_blank">Click to open email</a>', unsafe_allow_html=True)
-        
-        with col4:
-            is_favorite = recipe['id'] in st.session_state.favorites
-            favorite_icon = "★" if is_favorite else "☆"
-            if st.button(favorite_icon, help="Add/Remove from favorites"):
-                if recipe['id'] in st.session_state.favorites:
-                    st.session_state.favorites.remove(recipe['id'])
-                    st.toast("Removed from favorites!", icon="✖️")
-                else:
-                    st.session_state.favorites.add(recipe['id'])
-                    st.toast("Added to favorites!", icon="⭐")
-                time.sleep(0.1)
-                st.rerun()
-        
-        st.markdown("---")
-        
-        # Recipe details
-        recipe_dict = recipe.to_dict()
-        st.markdown(format_recipe_details(recipe_dict))
+    
+    with col2:
+        if st.button("📧 Email Recipe"):
+            recipe_text = format_recipe_details(recipe.to_dict())
+            mailto_link = f"mailto:?subject={recipe['name']}&body={recipe_text}"
+            st.markdown(f'<a href="{mailto_link}" target="_blank">Click to open email</a>', unsafe_allow_html=True)
+    
+    with col3:
+        is_favorite = recipe['id'] in st.session_state.favorites
+        favorite_icon = "★" if is_favorite else "☆"
+        if st.button(favorite_icon, help="Add/Remove from favorites"):
+            if recipe['id'] in st.session_state.favorites:
+                st.session_state.favorites.remove(recipe['id'])
+                message = "Removed from favorites!"
+                icon = "✖️"
+            else:
+                st.session_state.favorites.add(recipe['id'])
+                message = "Added to favorites!"
+                icon = "⭐"
+            
+            for _ in range(4):  # Show toast 4 times sequentially
+                st.toast(message, icon=icon)
+                time.sleep(0.2)  # 0.2s delay between toasts
+            
+            time.sleep(0.1)
+            st.rerun()
+    
+    st.markdown("---")
+    
+    # Recipe details
+    recipe_dict = recipe.to_dict()
+    st.markdown(format_recipe_details(recipe_dict))
 
-# Sidebar filters (only show when not viewing recipe details or print view)
-elif not st.session_state.print_view:
+# Sidebar filters
+else:
     st.sidebar.title("Recipe Filters")
     
     # Search box
@@ -298,10 +268,17 @@ elif not st.session_state.print_view:
                 if st.button(f"{favorite_icon}", key=f"fav_{recipe['id']}", help="Add/Remove from favorites"):
                     if recipe['id'] in st.session_state.favorites:
                         st.session_state.favorites.remove(recipe['id'])
-                        st.toast("Removed from favorites!", icon="✖️")
+                        message = "Removed from favorites!"
+                        icon = "✖️"
                     else:
                         st.session_state.favorites.add(recipe['id'])
-                        st.toast("Added to favorites!", icon="⭐")
+                        message = "Added to favorites!"
+                        icon = "⭐"
+                    
+                    for _ in range(4):  # Show toast 4 times sequentially
+                        st.toast(message, icon=icon)
+                        time.sleep(0.2)  # 0.2s delay between toasts
+                    
                     time.sleep(0.1)
                     st.rerun()
 
