@@ -45,7 +45,7 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
                         if is_filipino:
                             recipe = parse_filipino_recipe(recipe)
                         
-                        required_fields = ['name', 'cuisine', 'difficulty', 'prep_time', 'cook_time', 
+                        required_fields = ['name', 'difficulty', 'prep_time', 'cook_time', 
                                        'servings', 'ingredients', 'instructions']
                         missing_fields = [field for field in required_fields if field not in recipe]
                         
@@ -81,7 +81,6 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
                         all_recipes.append({
                             'id': recipe['id'],
                             'name': recipe['name'],
-                            'cuisine': recipe['cuisine'],
                             'difficulty': recipe['difficulty'],
                             'categories': recipe['categories'],
                             'preview_data': recipe
@@ -132,7 +131,6 @@ def parse_filipino_recipe(recipe: Dict) -> Dict:
     
     standardized_recipe = {
         'name': recipe.get('title', 'Unknown Filipino Recipe'),
-        'cuisine': 'Filipino',
         'difficulty': 'Medium',
         'prep_time': prep_time,
         'cook_time': cook_time,
@@ -146,14 +144,14 @@ def parse_filipino_recipe(recipe: Dict) -> Dict:
 
 def filter_recipes(df: pd.DataFrame, 
                   search_term: str = "", 
-                  cuisine: Optional[str] = None,
+                  difficulty: Optional[str] = None,
                   category: Optional[str] = None,
                   show_favorites: bool = False,
                   favorites: Optional[Set[int]] = None,
                   page: int = 1,
                   per_page: int = 10) -> tuple[pd.DataFrame, int]:
     """
-    Filter recipes based on search term, cuisine, category, and favorites
+    Filter recipes based on search term, difficulty, category, and favorites
     Returns filtered DataFrame and total number of pages
     """
     if df.empty:
@@ -172,8 +170,8 @@ def filter_recipes(df: pd.DataFrame,
             name_mask = filtered_df['name'].str.lower().str.contains(search_term, na=False)
             filtered_df = filtered_df[name_mask]
 
-        if cuisine and cuisine != "All":
-            filtered_df = filtered_df[filtered_df['cuisine'] == cuisine]
+        if difficulty and difficulty != "All":
+            filtered_df = filtered_df[filtered_df['difficulty'] == difficulty]
 
         if category and category != "All":
             filtered_df = filtered_df[filtered_df['categories'].apply(lambda x: category in x if isinstance(x, list) else False)]
@@ -201,7 +199,6 @@ def format_recipe_details(recipe: Dict) -> str:
     #### Cooking Time: {recipe['cook_time']}
     #### Servings: {recipe['servings']}
     #### Difficulty: {recipe['difficulty']}
-    #### Cuisine: {recipe['cuisine']}
     #### Categories: {', '.join(recipe.get('categories', []))}
     
     ## Ingredients

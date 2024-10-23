@@ -86,6 +86,22 @@ st.markdown("""
     .back-button {
         margin-bottom: 1rem;
     }
+    @media print {
+        .stButton, .stMarkdown > div:first-child, .css-1dp5vir {
+            display: none !important;
+        }
+        .main {
+            padding: 0;
+        }
+        .recipe-details {
+            background-color: white;
+            padding: 0;
+        }
+        * {
+            print-color-adjust: exact !important;
+            -webkit-print-color-adjust: exact !important;
+        }
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -126,8 +142,8 @@ st.title("🍳 Recipe Browser")
 if st.session_state.viewing_recipe is not None:
     recipe = st.session_state.viewing_recipe
     
-    # View with back and favorite buttons
-    col1, col2 = st.columns([4, 1])
+    # View with back, print, and favorite buttons
+    col1, col2, col3 = st.columns([3, 1, 1])
     
     with col1:
         if st.button("← Back to Recipes", type="primary"):
@@ -135,6 +151,15 @@ if st.session_state.viewing_recipe is not None:
             st.rerun()
     
     with col2:
+        if st.button("🖨️ Print Recipe"):
+            js_code = """
+            <script>
+                window.print();
+            </script>
+            """
+            st.markdown(js_code, unsafe_allow_html=True)
+    
+    with col3:
         is_favorite = recipe['id'] in st.session_state.favorites
         favorite_icon = "★" if is_favorite else "☆"
         if st.button(favorite_icon, help="Add/Remove from favorites"):
@@ -153,9 +178,11 @@ if st.session_state.viewing_recipe is not None:
     
     st.markdown("---")
     
-    # Recipe details
+    # Recipe details with print-friendly class
+    st.markdown('<div class="recipe-details">', unsafe_allow_html=True)
     recipe_dict = recipe.to_dict()
     st.markdown(format_recipe_details(recipe_dict))
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Sidebar filters
 else:
@@ -164,10 +191,10 @@ else:
     # Search box
     search_term = st.sidebar.text_input("Search recipes", "")
     
-    # Cuisine filter
+    # Difficulty filter
     if not st.session_state.recipes_df.empty:
-        cuisines = ["All"] + sorted(st.session_state.recipes_df['cuisine'].unique().tolist())
-        selected_cuisine = st.sidebar.selectbox("Select Cuisine", cuisines)
+        difficulties = ["All"] + sorted(st.session_state.recipes_df['difficulty'].unique().tolist())
+        selected_difficulty = st.sidebar.selectbox("Select Difficulty", difficulties)
     
         # Category filter
         all_categories = set()
@@ -190,7 +217,7 @@ else:
                                  if r['id'] in st.session_state.favorites])
             st.sidebar.markdown(f"💝 **{total_favorites} recipes** in favorites")
     else:
-        selected_cuisine = None
+        selected_difficulty = None
         selected_category = None
         show_favorites = False
 
@@ -198,7 +225,7 @@ else:
     filtered_recipes, total_pages = filter_recipes(
         st.session_state.recipes_df,
         search_term,
-        selected_cuisine,
+        selected_difficulty,
         selected_category,
         show_favorites,
         st.session_state.favorites,
@@ -209,7 +236,7 @@ else:
     if not st.session_state.recipes_df.empty and (
         'filtered_recipes' not in locals() or filtered_recipes.empty
     ):
-        if search_term or (selected_cuisine and selected_cuisine != "All") or (selected_category and selected_category != "All") or show_favorites:
+        if search_term or (selected_difficulty and selected_difficulty != "All") or (selected_category and selected_category != "All") or show_favorites:
             st.warning("No recipes found matching your criteria.")
         else:
             st.info("No recipes available. Please add some recipes to get started.")
@@ -290,4 +317,4 @@ else:
 # Footer
 st.markdown("---")
 st.markdown("### 📖 Recipe Browser App")
-st.markdown("Browse through our collection of delicious recipes. Use the sidebar to filter by cuisine and category!")
+st.markdown("Browse through our collection of delicious recipes. Use the sidebar to filter by difficulty and category!")
