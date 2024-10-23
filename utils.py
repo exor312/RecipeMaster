@@ -2,7 +2,7 @@ import json
 import pandas as pd
 import os
 import glob
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 import hashlib
 
 def generate_unique_id(recipe: Dict, seen_ids: set) -> int:
@@ -88,7 +88,7 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
                         
                         # Check for required fields
                         required_fields = ['name', 'cuisine', 'difficulty', 'prep_time', 'cook_time', 
-                                        'servings', 'ingredients', 'instructions']
+                                       'servings', 'ingredients', 'instructions']
                         missing_fields = [field for field in required_fields if field not in recipe]
                         
                         if missing_fields:
@@ -151,9 +151,11 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
 def filter_recipes(df: pd.DataFrame, 
                   search_term: str = "", 
                   cuisine: Optional[str] = None,
-                  category: Optional[str] = None) -> pd.DataFrame:
+                  category: Optional[str] = None,
+                  show_favorites: bool = False,
+                  favorites: Optional[Set[int]] = None) -> pd.DataFrame:
     """
-    Filter recipes based on search term, cuisine, and category
+    Filter recipes based on search term, cuisine, category, and favorites
     """
     if df.empty:
         return df
@@ -173,6 +175,9 @@ def filter_recipes(df: pd.DataFrame,
 
     if category and category != "All":
         filtered_df = filtered_df[filtered_df['categories'].apply(lambda x: category in x if isinstance(x, list) else False)]
+
+    if show_favorites and favorites is not None:
+        filtered_df = filtered_df[filtered_df['id'].isin(favorites)]
 
     return filtered_df
 
