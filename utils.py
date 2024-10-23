@@ -183,6 +183,23 @@ def filter_recipes(df: pd.DataFrame,
 
         return paginated_df, total_pages
 
+def format_instruction_step(instruction: str) -> str:
+    """Format a single instruction step with periods handling"""
+    # Split the instruction by periods, keeping the periods
+    parts = instruction.split('.')
+    formatted_parts = []
+    
+    for i, part in enumerate(parts):
+        if not part.strip():  # Skip empty parts
+            continue
+            
+        if i == 0:  # First part (before first period)
+            formatted_parts.append(f"{part}.")
+        else:  # Subsequent parts (after periods)
+            formatted_parts.append(f"<br><i>{part.strip()}.</i>")
+    
+    return ''.join(formatted_parts)
+
 def format_recipe_details(recipe: Dict) -> str:
     """Format recipe details for display with improved layout"""
     if 'preview_data' in recipe:
@@ -264,6 +281,11 @@ def format_recipe_details(recipe: Dict) -> str:
             align-items: center;
             justify-content: center;
             margin-right: 1em;
+            flex-shrink: 0;
+        }
+        .step-content {
+            flex-grow: 1;
+            line-height: 1.6;
         }
         .categories-section {
             display: flex;
@@ -339,10 +361,11 @@ def format_recipe_details(recipe: Dict) -> str:
     instructions_html = '<div class="instructions-section">'
     instructions_html += '<h2>Instructions</h2>'
     for i, instruction in enumerate(recipe['instructions']):
+        formatted_instruction = format_instruction_step(instruction)
         instructions_html += (
             f'<div class="instruction-step">'
             f'<div class="step-number">{i+1}</div>'
-            f'<div>{instruction}</div>'
+            f'<div class="step-content">{formatted_instruction}</div>'
             '</div>'
         )
     instructions_html += '</div>'
