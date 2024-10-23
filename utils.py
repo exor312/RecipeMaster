@@ -144,7 +144,6 @@ def parse_filipino_recipe(recipe: Dict) -> Dict:
     
     return standardized_recipe
 
-@st.cache_data
 def filter_recipes(df: pd.DataFrame, 
                   search_term: str = "", 
                   cuisine: Optional[str] = None,
@@ -162,7 +161,12 @@ def filter_recipes(df: pd.DataFrame,
 
     with st.spinner('Filtering recipes...'):
         filtered_df = df.copy()
-        
+
+        # Apply favorites filter first if show_favorites is True
+        if show_favorites and favorites is not None:
+            filtered_df = filtered_df[filtered_df['id'].isin(favorites)]
+            
+        # Apply other filters
         if search_term:
             search_term = search_term.lower()
             name_mask = filtered_df['name'].str.lower().str.contains(search_term, na=False)
@@ -174,9 +178,6 @@ def filter_recipes(df: pd.DataFrame,
         if category and category != "All":
             filtered_df = filtered_df[filtered_df['categories'].apply(lambda x: category in x if isinstance(x, list) else False)]
 
-        if show_favorites and favorites is not None:
-            filtered_df = filtered_df[filtered_df['id'].isin(favorites)]
-
         # Calculate total pages
         total_recipes = len(filtered_df)
         total_pages = (total_recipes + per_page - 1) // per_page
@@ -184,9 +185,9 @@ def filter_recipes(df: pd.DataFrame,
         # Apply pagination
         start_idx = (page - 1) * per_page
         end_idx = start_idx + per_page
-        filtered_df = filtered_df.iloc[start_idx:end_idx]
+        paginated_df = filtered_df.iloc[start_idx:end_idx]
 
-        return filtered_df, total_pages
+        return paginated_df, total_pages
 
 def format_recipe_details(recipe: Dict) -> str:
     """Format recipe details for display"""

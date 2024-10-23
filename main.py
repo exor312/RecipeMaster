@@ -99,6 +99,9 @@ if 'favorites' not in st.session_state:
 if 'viewing_recipe' not in st.session_state:
     st.session_state.viewing_recipe = None
 
+if 'prev_show_favorites' not in st.session_state:
+    st.session_state.prev_show_favorites = False
+
 # Load recipes
 if 'recipes_df' not in st.session_state:
     with st.spinner('Loading recipes...'):
@@ -140,8 +143,17 @@ if st.session_state.viewing_recipe is None:
     
         # Favorites filter
         show_favorites = st.sidebar.checkbox("Show Favorites Only")
+        
+        # Reset page number when toggling favorites
+        if show_favorites != st.session_state.prev_show_favorites:
+            st.session_state.page_number = 1
+            st.session_state.prev_show_favorites = show_favorites
+        
+        # Update favorites count display
         if show_favorites:
-            st.sidebar.markdown(f"💝 **{len(st.session_state.favorites)} recipes** in favorites")
+            total_favorites = len([r for _, r in st.session_state.recipes_df.iterrows() 
+                                 if r['id'] in st.session_state.favorites])
+            st.sidebar.markdown(f"💝 **{total_favorites} recipes** in favorites")
     else:
         selected_cuisine = None
         selected_category = None
@@ -247,23 +259,24 @@ else:
     st.markdown('</div>', unsafe_allow_html=True)
 
     # Pagination (only show in grid view)
-    st.markdown("---")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col1:
-        if st.session_state.page_number > 1:
-            if st.button("← Previous"):
-                st.session_state.page_number -= 1
-                st.rerun()
-                
-    with col2:
-        st.markdown(f"<div style='text-align: center'>Page {st.session_state.page_number} of {total_pages}</div>", unsafe_allow_html=True)
+    if total_pages > 1:
+        st.markdown("---")
+        col1, col2, col3 = st.columns([1, 2, 1])
         
-    with col3:
-        if st.session_state.page_number < total_pages:
-            if st.button("Next →"):
-                st.session_state.page_number += 1
-                st.rerun()
+        with col1:
+            if st.session_state.page_number > 1:
+                if st.button("← Previous"):
+                    st.session_state.page_number -= 1
+                    st.rerun()
+                    
+        with col2:
+            st.markdown(f"<div style='text-align: center'>Page {st.session_state.page_number} of {total_pages}</div>", unsafe_allow_html=True)
+            
+        with col3:
+            if st.session_state.page_number < total_pages:
+                if st.button("Next →"):
+                    st.session_state.page_number += 1
+                    st.rerun()
 
 # Footer
 st.markdown("---")
