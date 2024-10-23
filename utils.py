@@ -5,6 +5,7 @@ import glob
 from typing import Dict, List, Optional, Set
 import hashlib
 import streamlit as st
+import re
 
 @st.cache_data
 def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
@@ -185,18 +186,44 @@ def filter_recipes(df: pd.DataFrame,
 
 def format_instruction_step(instruction: str) -> str:
     """Format a single instruction step with periods handling"""
-    # Split the instruction by periods, keeping the periods
-    parts = instruction.split('.')
-    formatted_parts = []
+    parts = []
+    current_part = ""
+    i = 0
     
+    while i < len(instruction):
+        # Check if we're at a period
+        if instruction[i] == '.':
+            # Look back to check if it's preceded by 'lb' or 'lbs'
+            prev_text = instruction[max(0, i-3):i].lower()
+            if not (prev_text.endswith('lb') or prev_text.endswith('lbs')):
+                # This is a sentence-ending period
+                current_part += '.'
+                parts.append(current_part)
+                current_part = ""
+            else:
+                # This is part of a measurement, keep it with the current part
+                current_part += '.'
+        else:
+            current_part += instruction[i]
+        i += 1
+    
+    # Add any remaining text
+    if current_part:
+        parts.append(current_part)
+    
+    # Format the parts
+    formatted_parts = []
     for i, part in enumerate(parts):
-        if not part.strip():  # Skip empty parts
+        part = part.strip()
+        if not part:  # Skip empty parts
             continue
             
         if i == 0:  # First part (before first period)
-            formatted_parts.append(f"{part}.")
+            formatted_parts.append(part)
         else:  # Subsequent parts (after periods)
-            formatted_parts.append(f"<br><i>{part.strip()}.</i>")
+            if not part.endswith('.'):
+                part += '.'
+            formatted_parts.append(f"<br><i>{part}</i>")
     
     return ''.join(formatted_parts)
 

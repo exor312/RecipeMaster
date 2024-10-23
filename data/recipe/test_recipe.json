@@ -1,0 +1,27 @@
+{
+  "recipes": [
+    {
+      "id": 999999,
+      "name": "Test Recipe with Measurements",
+      "difficulty": "Medium",
+      "prep_time": "15 mins",
+      "cook_time": "30 mins",
+      "servings": 4,
+      "categories": ["Test"],
+      "ingredients": [
+        "2 lb ground beef",
+        "3 lbs potatoes",
+        "1 onion",
+        "Salt and pepper"
+      ],
+      "instructions": [
+        "Start by preparing 2 lb of ground beef. Mix with seasonings and form into patties.",
+        "Take 3 lbs of potatoes and wash them thoroughly. Cut into wedges.",
+        "Heat the oil in a pan. This will help cook the meat evenly.",
+        "Cook the patties for 5 minutes per side. They should be brown and crispy on the outside.",
+        "Add the potato wedges to the pan. Season with salt and pepper.",
+        "Cover and cook until done. The potatoes should be tender."
+      ]
+    }
+  ]
+}
