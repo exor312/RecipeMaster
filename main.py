@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import time
 from utils import load_recipes, filter_recipes, format_recipe_details
 
 # Page configuration
@@ -20,8 +21,14 @@ st.markdown("""
     }
     .recipe-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1.5rem;
+        margin: 1rem 0;
+    }
+    @media (max-width: 768px) {
+        .recipe-grid {
+            grid-template-columns: 1fr !important;
+        }
     }
     .recipe-card {
         height: 100%;
@@ -185,7 +192,8 @@ else:
             if st.button(f"View Details", key=f"view_{recipe['id']}"):
                 with st.spinner("Loading recipe details..."):
                     st.markdown("---")
-                    st.markdown(format_recipe_details(recipe))
+                    recipe_dict = recipe.to_dict()
+                    st.markdown(format_recipe_details(recipe_dict))
                     
                     # Recipe metadata using CSS Grid
                     st.markdown(f"""
@@ -200,13 +208,14 @@ else:
                     """, unsafe_allow_html=True)
         
         with col2:
-            if st.button(f"{favorite_icon}", key=f"fav_{recipe['id']}", help="Add to favorites", type="primary" if is_favorite else "secondary"):
+            if st.button(f"{favorite_icon}", key=f"fav_{recipe['id']}", help="Add/Remove from favorites"):
                 if recipe['id'] in st.session_state.favorites:
                     st.session_state.favorites.remove(recipe['id'])
-                    st.toast(f"Removed '{recipe['name']}' from favorites!", icon="✖️")
+                    st.toast(f"Removed from favorites!", icon="✖️")
                 else:
                     st.session_state.favorites.add(recipe['id'])
-                    st.toast(f"Added '{recipe['name']}' to favorites!", icon="⭐")
+                    st.toast(f"Added to favorites!", icon="⭐")
+                time.sleep(0.1)  # Small delay to ensure toast appears
                 st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
