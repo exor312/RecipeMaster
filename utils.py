@@ -4,9 +4,9 @@ import os
 import glob
 from typing import Dict, List, Optional
 
-def load_recipes(data_dir: str = 'data') -> pd.DataFrame:
+def load_recipes(data_dir: str = 'recipes') -> pd.DataFrame:
     """
-    Load recipes from all JSON files in the data directory and convert to DataFrame
+    Load recipes from all JSON files in the recipes directory and convert to DataFrame
     
     Args:
         data_dir (str): Directory containing recipe JSON files
@@ -19,7 +19,10 @@ def load_recipes(data_dir: str = 'data') -> pd.DataFrame:
     errors = []
 
     try:
-        # Find all JSON files in the data directory
+        # Create recipes directory if it doesn't exist
+        os.makedirs(data_dir, exist_ok=True)
+        
+        # Find all JSON files in the recipes directory
         json_files = glob.glob(os.path.join(data_dir, '*.json'))
         
         if not json_files:
