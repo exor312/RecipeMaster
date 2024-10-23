@@ -23,6 +23,19 @@ st.markdown("""
         border-radius: 5px;
         background-color: #f0f2f6;
         margin-bottom: 1rem;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .recipe-header {
+        margin-bottom: 1rem;
+    }
+    .recipe-actions {
+        display: grid;
+        grid-template-columns: 3fr 1fr;
+        gap: 1rem;
+        align-items: center;
     }
     .category-tag {
         display: inline-block;
@@ -50,16 +63,31 @@ st.markdown("""
         align-items: center;
         margin: 2rem 0;
     }
-    .stSpinner {
-        position: relative;
-        pointer-events: none;
-        z-index: 999;
+    .recipe-details {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin: 1rem 0;
     }
-    .center-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 200px;
+    .loading-container {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        z-index: 1000;
+    }
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #FF4B4B;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -71,22 +99,31 @@ if 'page_number' not in st.session_state:
 if 'favorites' not in st.session_state:
     st.session_state.favorites = set()
 
-# Load recipes with loading indicator
+# Custom loading indicator
+def show_loading(message="Loading..."):
+    st.markdown(f"""
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>{message}</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+# Load recipes
 if 'recipes_df' not in st.session_state:
-    with st.spinner('Loading recipes...'):
-        try:
-            st.session_state.recipes_df = load_recipes()
-        except FileNotFoundError as e:
-            st.error(str(e))
-            st.info("Please add recipe JSON files to the 'data/recipe' directory to get started.")
-            st.stop()
-        except ValueError as e:
-            st.error(str(e))
-            st.info("Please ensure your recipe JSON files contain all required fields.")
-            st.stop()
-        except Exception as e:
-            st.error(f"An unexpected error occurred: {str(e)}")
-            st.stop()
+    show_loading('Loading recipes...')
+    try:
+        st.session_state.recipes_df = load_recipes()
+    except FileNotFoundError as e:
+        st.error(str(e))
+        st.info("Please add recipe JSON files to the 'data/recipe' directory to get started.")
+        st.stop()
+    except ValueError as e:
+        st.error(str(e))
+        st.info("Please ensure your recipe JSON files contain all required fields.")
+        st.stop()
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {str(e)}")
+        st.stop()
 
 # Sidebar filters
 st.sidebar.title("Recipe Filters")
@@ -139,46 +176,60 @@ else:
     cols = st.columns(2)
     for idx, (_, recipe) in enumerate(filtered_recipes.iterrows()):
         with cols[idx % 2]:
-            with st.container():
-                # Create category tags HTML
-                category_tags = ''.join([f'<span class="category-tag">{cat}</span>' for cat in recipe['categories']])
-                
-                # Favorite button with active state
-                is_favorite = recipe['id'] in st.session_state.favorites
-                favorite_icon = "★" if is_favorite else "☆"
-                favorite_class = "favorite-button active" if is_favorite else "favorite-button"
-                
-                st.markdown(f"""
-                    <div class="recipe-card">
+            # Create category tags HTML
+            category_tags = ''.join([f'<span class="category-tag">{cat}</span>' for cat in recipe['categories']])
+            
+            # Favorite button with active state
+            is_favorite = recipe['id'] in st.session_state.favorites
+            favorite_icon = "★" if is_favorite else "☆"
+            
+            st.markdown(f"""
+                <div class="recipe-card">
+                    <div class="recipe-header">
                         <h3>{recipe['name']}</h3>
                         <p>Cuisine: {recipe['cuisine']} | {recipe['difficulty']}</p>
                         <p>{category_tags}</p>
                     </div>
-                """, unsafe_allow_html=True)
-                
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    if st.button(f"View Details", key=f"view_{recipe['id']}"):
-                        with st.spinner("Loading recipe details..."):
-                            st.markdown("---")
-                            st.markdown(format_recipe_details(recipe))
-                            
-                            # Additional recipe metadata
-                            mcol1, mcol2 = st.columns(2)
-                            with mcol1:
-                                st.metric("Preparation Time", recipe['preview_data']['prep_time'])
-                            with mcol2:
-                                st.metric("Cooking Time", recipe['preview_data']['cook_time'])
-                
-                with col2:
-                    if st.button(f"{favorite_icon}", key=f"fav_{recipe['id']}", help="Add to favorites", type="primary" if is_favorite else "secondary"):
-                        if recipe['id'] in st.session_state.favorites:
-                            st.session_state.favorites.remove(recipe['id'])
-                            st.success(f"Removed '{recipe['name']}' from favorites!")
-                        else:
-                            st.session_state.favorites.add(recipe['id'])
-                            st.success(f"Added '{recipe['name']}' to favorites!")
-                        st.rerun()
+                    <div class="recipe-actions">
+                        <div>
+                            <!-- View Details button will be placed here -->
+                        </div>
+                        <div>
+                            <!-- Favorite button will be placed here -->
+                        </div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Add interactive buttons
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                if st.button(f"View Details", key=f"view_{recipe['id']}"):
+                    show_loading("Loading recipe details...")
+                    st.markdown("---")
+                    st.markdown(format_recipe_details(recipe))
+                    
+                    # Recipe metadata using CSS Grid
+                    st.markdown(f"""
+                        <div class="recipe-details">
+                            <div>
+                                <strong>Preparation Time:</strong> {recipe['preview_data']['prep_time']}
+                            </div>
+                            <div>
+                                <strong>Cooking Time:</strong> {recipe['preview_data']['cook_time']}
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+            
+            with col2:
+                if st.button(f"{favorite_icon}", key=f"fav_{recipe['id']}", help="Add to favorites", type="primary" if is_favorite else "secondary"):
+                    if recipe['id'] in st.session_state.favorites:
+                        st.session_state.favorites.remove(recipe['id'])
+                        st.success(f"Removed '{recipe['name']}' from favorites!")
+                    else:
+                        st.session_state.favorites.add(recipe['id'])
+                        st.success(f"Added '{recipe['name']}' to favorites!")
+                    st.rerun()
 
     # Pagination
     st.markdown("---")
