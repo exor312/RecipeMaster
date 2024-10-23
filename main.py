@@ -32,7 +32,7 @@ st.markdown("""
     }
     .recipe-card {
         height: 100%;
-        min-height: 250px;
+        min-height: 200px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -273,7 +273,7 @@ elif not st.session_state.print_view:
                 <div class="recipe-card">
                     <div class="recipe-header">
                         <h3>{recipe['name']}</h3>
-                        <p>Cuisine: {recipe['cuisine']} | {recipe['difficulty']}</p>
+                        <p>⏱️ {recipe['preview_data']['cook_time']} | 📊 {recipe['difficulty']}</p>
                         <p>{category_tags}</p>
                     </div>
                     <div class="recipe-actions">
