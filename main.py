@@ -18,11 +18,6 @@ st.markdown("""
     }
     .stButton > button {
         width: 100%;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0;
     }
     .recipe-grid {
         display: grid;
@@ -45,38 +40,31 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         height: 100%;
-        min-height: 280px;
     }
     .recipe-header {
-        flex-grow: 1;
-        margin-bottom: 1rem;
-        min-height: 150px;
+        flex: 1;
         display: flex;
         flex-direction: column;
+        gap: 0.5rem;
     }
     .recipe-header h3 {
-        margin: 0 0 0.5rem 0;
+        margin: 0;
         font-size: 1.2rem;
         line-height: 1.4;
-        overflow-wrap: break-word;
     }
     .recipe-meta {
-        margin: 0.5rem 0;
         font-size: 0.9rem;
         color: #666;
     }
     .recipe-categories {
-        margin-top: auto;
         display: flex;
         flex-wrap: wrap;
         gap: 0.3rem;
-        padding-bottom: 1rem;
     }
     .recipe-actions {
         display: grid;
         grid-template-columns: 3fr 1fr;
         gap: 1rem;
-        align-items: center;
         margin-top: auto;
         padding-top: 1rem;
         border-top: 1px solid rgba(0,0,0,0.1);
@@ -87,17 +75,14 @@ st.markdown("""
         border-radius: 15px;
         background-color: #e1e1e1;
         font-size: 0.8rem;
-        white-space: nowrap;
     }
     .favorite-button {
         color: #ff4b4b;
         font-size: 1.5rem;
         cursor: pointer;
-        padding: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 40px;
     }
     .favorite-button.active {
         color: #ff0000;
@@ -105,17 +90,9 @@ st.markdown("""
     div[data-testid="stHorizontalBlock"] {
         gap: 1rem;
         align-items: stretch;
-        margin-bottom: 1rem;
     }
     div[data-testid="stHorizontalBlock"] > div {
         flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-    div[data-testid="column"] {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
     }
     </style>
 """, unsafe_allow_html=True)
