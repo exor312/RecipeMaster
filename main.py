@@ -153,11 +153,9 @@ if st.session_state.viewing_recipe is not None:
     
     st.markdown("---")
     
-    # Recipe details
-    st.markdown('<div class="recipe-details">', unsafe_allow_html=True)
-    recipe_dict = recipe.to_dict()
-    st.markdown(format_recipe_details(recipe_dict))
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Recipe details with proper HTML rendering
+    recipe_dict = recipe.to_dict() if isinstance(recipe, pd.Series) else recipe
+    st.markdown(format_recipe_details(recipe_dict), unsafe_allow_html=True)
 
 # Sidebar filters
 else:

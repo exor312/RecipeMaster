@@ -191,8 +191,8 @@ def format_recipe_details(recipe: Dict) -> str:
     """Format recipe details for display with improved layout"""
     if 'preview_data' in recipe:
         recipe = recipe['preview_data']
-        
-    # Add custom CSS for better styling
+
+    # Build CSS styles
     css = """
     <style>
         .recipe-title {
@@ -284,16 +284,16 @@ def format_recipe_details(recipe: Dict) -> str:
         }
     </style>
     """
+
+    # Build HTML sections
+    title_html = f'<div class="recipe-title">{recipe["name"]}</div>'
     
-    # Build the HTML structure
-    html = f"""
-    {css}
-    <div class="recipe-title">{recipe['name']}</div>
+    categories_html = '<div class="categories-section">'
+    categories_html += ''.join(f'<span class="category-tag">{cat}</span>' 
+                             for cat in recipe.get('categories', []))
+    categories_html += '</div>'
     
-    <div class="categories-section">
-        {' '.join(f'<span class="category-tag">{cat}</span>' for cat in recipe.get('categories', []))}
-    </div>
-    
+    info_html = f'''
     <div class="recipe-info">
         <div class="info-item">
             <div class="info-label">Prep Time</div>
@@ -312,24 +312,27 @@ def format_recipe_details(recipe: Dict) -> str:
             <div class="info-value">{recipe['difficulty']}</div>
         </div>
     </div>
+    '''
     
-    <div class="ingredients-section">
-        <h2>Ingredients</h2>
-        <div class="ingredients-grid">
-            {' '.join(f'<div class="ingredient-item">{ingredient}</div>' 
-                     for ingredient in recipe['ingredients'])}
+    ingredients_html = '<div class="ingredients-section">'
+    ingredients_html += '<h2>Ingredients</h2>'
+    ingredients_html += '<div class="ingredients-grid">'
+    for ingredient in recipe['ingredients']:
+        ingredients_html += f'<div class="ingredient-item">{ingredient}</div>'
+    ingredients_html += '</div></div>'
+    
+    instructions_html = '<div class="instructions-section">'
+    instructions_html += '<h2>Instructions</h2>'
+    for i, instruction in enumerate(recipe['instructions']):
+        instructions_html += f'''
+        <div class="instruction-step">
+            <div class="step-number">{i+1}</div>
+            <div>{instruction}</div>
         </div>
-    </div>
+        '''
+    instructions_html += '</div>'
     
-    <div class="instructions-section">
-        <h2>👩‍🍳 Instructions</h2>
-        {''.join(f'''
-            <div class="instruction-step">
-                <div class="step-number">{i+1}</div>
-                <div>{instruction}</div>
-            </div>
-        ''' for i, instruction in enumerate(recipe['instructions']))}
-    </div>
-    """
+    # Combine all sections
+    complete_html = css + title_html + categories_html + info_html + ingredients_html + instructions_html
     
-    return html
+    return complete_html
