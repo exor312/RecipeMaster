@@ -1,0 +1,57 @@
+{
+    "recipes": [
+        {
+            "id": 1,
+            "name": "Classic Spaghetti Carbonara",
+            "ingredients": [
+                "400g spaghetti",
+                "200g pancetta",
+                "4 large eggs",
+                "100g Pecorino Romano",
+                "100g Parmigiano-Reggiano",
+                "Black pepper",
+                "Salt"
+            ],
+            "instructions": [
+                "Bring a large pot of salted water to boil",
+                "Cook spaghetti according to package instructions",
+                "Meanwhile, cook pancetta until crispy",
+                "Beat eggs and mix with grated cheese",
+                "Combine pasta with egg mixture and pancetta",
+                "Season with black pepper and serve immediately"
+            ],
+            "prep_time": "10 minutes",
+            "cook_time": "20 minutes",
+            "servings": 4,
+            "difficulty": "Medium",
+            "cuisine": "Italian"
+        },
+        {
+            "id": 2,
+            "name": "Classic Caesar Salad",
+            "ingredients": [
+                "2 heads romaine lettuce",
+                "1 cup croutons",
+                "1/2 cup Parmesan cheese",
+                "2 cloves garlic",
+                "2 tablespoons lemon juice",
+                "1 teaspoon Worcestershire sauce",
+                "1/2 cup olive oil",
+                "Salt and pepper"
+            ],
+            "instructions": [
+                "Wash and chop lettuce",
+                "Make dressing by combining garlic, lemon juice, Worcestershire sauce",
+                "Slowly whisk in olive oil",
+                "Toss lettuce with dressing",
+                "Add croutons and cheese",
+                "Season to taste"
+            ],
+            "prep_time": "15 minutes",
+            "cook_time": "0 minutes",
+            "servings": 4,
+            "difficulty": "Easy",
+            "cuisine": "American"
+        }
+    ]
+}
