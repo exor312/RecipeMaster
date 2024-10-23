@@ -9,21 +9,42 @@ def generate_unique_id(recipe: Dict, seen_ids: set) -> int:
     """
     Generate a unique ID for a recipe based on its content
     """
-    # Start with a hash of the recipe name and ingredients to create a base number
     content = f"{recipe['name']}{''.join(recipe['ingredients'])}".encode('utf-8')
     hash_num = int(hashlib.md5(content).hexdigest(), 16)
-    
-    # Get a number between 1 and 1000000 that isn't in seen_ids
     base_id = (hash_num % 1000000) + 1
     new_id = base_id
     
-    # If the ID is already taken, increment until we find an unused one
     while new_id in seen_ids:
         new_id += 1
         if new_id > 1000000:
-            new_id = 1  # wrap around if we somehow exceed our range
+            new_id = 1
     
     return new_id
+
+def parse_filipino_recipe(recipe: Dict) -> Dict:
+    """
+    Parse Filipino recipe format and convert to standard format
+    """
+    # Extract cooking time and convert to standard format
+    cook_time = recipe.get('cooking_time', '30 minutes')
+    
+    # Set default prep time as 15 minutes if not specified
+    prep_time = '15 minutes'
+    
+    # Map the fields to our standard format
+    standardized_recipe = {
+        'name': recipe.get('title', 'Unknown Filipino Recipe'),
+        'cuisine': 'Filipino',
+        'difficulty': 'Medium',  # Default difficulty
+        'prep_time': prep_time,
+        'cook_time': cook_time,
+        'servings': recipe.get('servings', '4'),  # Default to 4 servings if N/A
+        'ingredients': [ing.replace('▢ ', '') for ing in recipe.get('ingredients', [])],
+        'instructions': recipe.get('instructions', []),
+        'categories': [recipe.get('category', 'Filipino Dishes')]
+    }
+    
+    return standardized_recipe
 
 def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
     """
@@ -34,10 +55,7 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
     warnings = []
     
     try:
-        # Create data/recipe directory structure if it doesn't exist
         os.makedirs(data_dir, exist_ok=True)
-        
-        # Find all JSON files in the recipes directory
         json_files = glob.glob(os.path.join(data_dir, '*.json'))
         
         if not json_files:
@@ -50,21 +68,29 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
             try:
                 with open(file_path, 'r') as f:
                     data = json.load(f)
+                    
+                    # Check if this is a Filipino recipe file
+                    is_filipino = 'filipino_recipes_page_' in os.path.basename(file_path).lower()
+                    
                     # Handle both single recipe and recipe collection formats
                     recipes = data if isinstance(data, list) else data.get('recipes', [])
                     if not isinstance(recipes, list):
                         recipes = [recipes]
                     
                     for recipe in recipes:
-                        # Skip invalid recipes
                         if not isinstance(recipe, dict):
                             warnings.append(f"Skipped invalid recipe format in {file_path}")
                             continue
-                            
+                        
+                        # Parse Filipino recipes differently
+                        if is_filipino:
+                            recipe = parse_filipino_recipe(recipe)
+                        
                         # Check for required fields
                         required_fields = ['name', 'cuisine', 'difficulty', 'prep_time', 'cook_time', 
-                                         'servings', 'ingredients', 'instructions']
+                                        'servings', 'ingredients', 'instructions']
                         missing_fields = [field for field in required_fields if field not in recipe]
+                        
                         if missing_fields:
                             warnings.append(
                                 f"Recipe '{recipe.get('name', 'Unknown')}' in {file_path} "
@@ -79,7 +105,6 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
                         # Handle recipe ID
                         recipe_id = recipe.get('id')
                         if recipe_id is None:
-                            # Generate a new unique ID
                             recipe_id = generate_unique_id(recipe, seen_ids)
                             recipe['id'] = recipe_id
                             warnings.append(
@@ -87,7 +112,6 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
                                 f"in {file_path}"
                             )
                         elif recipe_id in seen_ids:
-                            # Handle duplicate ID by generating a new one
                             new_id = generate_unique_id(recipe, seen_ids)
                             warnings.append(
                                 f"Found duplicate ID {recipe_id} for recipe '{recipe['name']}' "
@@ -113,7 +137,6 @@ def load_recipes(data_dir: str = 'data/recipe') -> pd.DataFrame:
 
         df = pd.DataFrame(all_recipes)
         
-        # If there were any warnings, log them but continue if we have valid recipes
         if warnings:
             print("\nRecipe Loading Summary:")
             for warning in warnings:
@@ -138,7 +161,6 @@ def filter_recipes(df: pd.DataFrame,
     filtered_df = df.copy()
     
     if search_term:
-        # Search in name and ingredients
         search_term = search_term.lower()
         name_mask = filtered_df['name'].str.lower().str.contains(search_term, na=False)
         ingredients_mask = filtered_df['ingredients'].apply(
@@ -150,7 +172,7 @@ def filter_recipes(df: pd.DataFrame,
         filtered_df = filtered_df[filtered_df['cuisine'] == cuisine]
 
     if category and category != "All":
-        filtered_df = filtered_df[filtered_df['categories'].apply(lambda x: category in x)]
+        filtered_df = filtered_df[filtered_df['categories'].apply(lambda x: category in x if isinstance(x, list) else False)]
 
     return filtered_df
 
