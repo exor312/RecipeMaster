@@ -86,22 +86,6 @@ st.markdown("""
     .back-button {
         margin-bottom: 1rem;
     }
-    @media print {
-        .stButton, .stMarkdown > div:first-child, .css-1dp5vir {
-            display: none !important;
-        }
-        .main {
-            padding: 0;
-        }
-        .recipe-details {
-            background-color: white;
-            padding: 0;
-        }
-        * {
-            print-color-adjust: exact !important;
-            -webkit-print-color-adjust: exact !important;
-        }
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -142,8 +126,8 @@ st.title("🍳 Recipe Browser")
 if st.session_state.viewing_recipe is not None:
     recipe = st.session_state.viewing_recipe
     
-    # View with back, print, and favorite buttons
-    col1, col2, col3 = st.columns([3, 1, 1])
+    # View with back and favorite buttons
+    col1, col2 = st.columns([4, 1])
     
     with col1:
         if st.button("← Back to Recipes", type="primary"):
@@ -151,15 +135,6 @@ if st.session_state.viewing_recipe is not None:
             st.rerun()
     
     with col2:
-        if st.button("🖨️ Print Recipe"):
-            js_code = """
-            <script>
-                window.print();
-            </script>
-            """
-            st.markdown(js_code, unsafe_allow_html=True)
-    
-    with col3:
         is_favorite = recipe['id'] in st.session_state.favorites
         favorite_icon = "★" if is_favorite else "☆"
         if st.button(favorite_icon, help="Add/Remove from favorites"):
@@ -178,7 +153,7 @@ if st.session_state.viewing_recipe is not None:
     
     st.markdown("---")
     
-    # Recipe details with print-friendly class
+    # Recipe details
     st.markdown('<div class="recipe-details">', unsafe_allow_html=True)
     recipe_dict = recipe.to_dict()
     st.markdown(format_recipe_details(recipe_dict))
