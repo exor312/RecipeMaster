@@ -18,6 +18,11 @@ st.markdown("""
     }
     .stButton > button {
         width: 100%;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
     }
     .recipe-grid {
         display: grid;
@@ -35,35 +40,82 @@ st.markdown("""
         background-color: #f0f2f6;
         padding: 1.5rem;
         border-radius: 5px;
-        margin-bottom: 1rem;
         width: 100%;
         box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 280px;
     }
     .recipe-header {
+        flex-grow: 1;
         margin-bottom: 1rem;
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
+    }
+    .recipe-header h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.2rem;
+        line-height: 1.4;
+        overflow-wrap: break-word;
+    }
+    .recipe-meta {
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    .recipe-categories {
+        margin-top: auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        padding-bottom: 1rem;
     }
     .recipe-actions {
         display: grid;
         grid-template-columns: 3fr 1fr;
         gap: 1rem;
         align-items: center;
-        margin-top: 1rem;
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(0,0,0,0.1);
     }
     .category-tag {
         display: inline-block;
         padding: 0.2rem 0.5rem;
-        margin: 0.2rem;
         border-radius: 15px;
         background-color: #e1e1e1;
         font-size: 0.8rem;
+        white-space: nowrap;
     }
     .favorite-button {
         color: #ff4b4b;
         font-size: 1.5rem;
         cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
     }
     .favorite-button.active {
         color: #ff0000;
+    }
+    div[data-testid="stHorizontalBlock"] {
+        gap: 1rem;
+        align-items: stretch;
+        margin-bottom: 1rem;
+    }
+    div[data-testid="stHorizontalBlock"] > div {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    div[data-testid="column"] {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -166,7 +218,7 @@ else:
         # Update favorites count display
         if show_favorites:
             total_favorites = len([r for _, r in st.session_state.recipes_df.iterrows() 
-                                 if r['id'] in st.session_state.favorites])
+                                if r['id'] in st.session_state.favorites])
             st.sidebar.markdown(f"💝 **{total_favorites} recipes** in favorites")
     else:
         selected_difficulty = None
@@ -209,8 +261,12 @@ else:
                     <div class="recipe-card">
                         <div class="recipe-header">
                             <h3>{recipe['name']}</h3>
-                            <p>⏱️ {recipe['preview_data']['cook_time']} | 📊 {recipe['difficulty']}</p>
-                            <p>{category_tags}</p>
+                            <div class="recipe-meta">⏱️ {recipe['preview_data']['cook_time']} | 📊 {recipe['difficulty']}</div>
+                            <div class="recipe-categories">{category_tags}</div>
+                        </div>
+                        <div class="recipe-actions">
+                            <div class="view-button"></div>
+                            <div class="fav-button"></div>
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
@@ -246,8 +302,12 @@ else:
                         <div class="recipe-card">
                             <div class="recipe-header">
                                 <h3>{recipe['name']}</h3>
-                                <p>⏱️ {recipe['preview_data']['cook_time']} | 📊 {recipe['difficulty']}</p>
-                                <p>{category_tags}</p>
+                                <div class="recipe-meta">⏱️ {recipe['preview_data']['cook_time']} | 📊 {recipe['difficulty']}</div>
+                                <div class="recipe-categories">{category_tags}</div>
+                            </div>
+                            <div class="recipe-actions">
+                                <div class="view-button"></div>
+                                <div class="fav-button"></div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
